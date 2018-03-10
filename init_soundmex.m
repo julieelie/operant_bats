@@ -16,8 +16,13 @@ elseif Box.ID == 7
     Box.Channels.Rec = 1; % or (0:1)
     Box.Channels.Play = 3;
     %Box.Channels.Trigger=2;
+elseif Box.ID == 9
+    Box.Channels.Rec = 0; % or (0:1)
+    Box.Channels.Play = 1;
 end
-Box.RecPath=sprintf('C:\Users\tobias\Desktop\bataudio\autoTrain\box_%d\', Box.ID);
+Curr_path = pwd;
+filepartitions=strfind(Curr_path, '\');
+Box.RecPath=sprintf('%s\\Desktop\\bataudio\\autoTrain\\box_%d\\', Curr_path(1:(filepartitions(3)-1)), Box.ID);
 Box.Amp.Track=0;
 Box.Amp.BufferFile=sprintf('rec_box%d.wav', Box.ID);
 
