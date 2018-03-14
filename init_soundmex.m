@@ -23,14 +23,14 @@ end
 Curr_path = pwd;
 filepartitions=strfind(Curr_path, '\');
 Box.RecPath=sprintf('%s\\Desktop\\bataudio\\autoTrain\\box_%d\\', Curr_path(1:(filepartitions(3)-1)), Box.ID);
-Box.Amp.Track=0;
-Box.Amp.BufferFile=sprintf('rec_box%d.wav', Box.ID);
+Box.SoundCard.Track=0;
+Box.SoundCard.BufferFile=sprintf('rec_box%d.wav', Box.ID);
 
 %% set default parameters for audio input filtering (Will get from gui)
-Box.Amp.fs=192000;
-Box.Amp.feedback_threshold_output=-35; %keep high and gain with the cuemix
-Box.Amp.feedback_min_dur=0.005;
-Box.Amp.pre_trg=0.1;
+Box.SoundCard.fs=192000;
+Box.SoundCard.feedback_threshold_output=-35; %keep high and gain with the cuemix
+Box.SoundCard.feedback_min_dur=0.005;
+Box.SoundCard.pre_trg=0.1;
 
 %% trigger video onset
 %vt = load('C:\Users\tobias\Desktop\code\initiation\Trigger_Pulse.mat');
@@ -39,23 +39,23 @@ Box.Amp.pre_trg=0.1;
 %% initiate soundmexpro
 ID='MOTU Audio ASIO';
 nbufs=2; %Set the # of buffers?
-soundmexpro('init','driver',ID,'samplerate',Box.Amp.fs,'input',Box.Channels.Rec,...
+soundmexpro('init','driver',ID,'samplerate',Box.SoundCard.fs,'input',Box.Channels.Rec,...
     'output',Box.Channels.Play,'track',length(Box.Channels.Play),'numbufs',nbufs); %[playchan5 triggerchan5]
 soundmexpro('show')
 
 %% get asio properties
-[~,fsq,Box.Amp.bufsiz]=soundmexpro('getproperties');
-Box.Amp.feedbbuf=round(Box.Amp.feedback_min_dur*fsq/Box.Amp.bufsiz);
+[~,fsq,Box.SoundCard.bufsiz]=soundmexpro('getproperties');
+Box.SoundCard.feedbbuf=round(Box.SoundCard.feedback_min_dur*fsq/Box.SoundCard.bufsiz);
 
 
-%% map tracks to output channels (ask Daria)
+%% map tracks to output channels
 [success, trackmapcheck] = soundmexpro('trackmap', ...
-    'track', Box.Amp.Track...        % new mapping
+    'track', Box.SoundCard.Track...        % new mapping
 );
 
 %% check clipthreshold
 if 1 ~= soundmexpro('clipthreshold','type','input','value',...
-        10^(Box.Amp.feedback_threshold_output/20))
+        10^(Box.SoundCard.feedback_threshold_output/20))
     error('error setting clipthreshold %s\n', datestr(now,30));
 end
 if 1 ~= soundmexpro('recpause','value', ones(1,1),...
@@ -64,6 +64,6 @@ if 1 ~= soundmexpro('recpause','value', ones(1,1),...
 end
 
 %% Set buffer filename
-soundmexpro('recfilename', 'filename', Box.Amp.BufferFile, 'channel', 0);
+soundmexpro('recfilename', 'filename', Box.SoundCard.BufferFile, 'channel', 0);
 
 end

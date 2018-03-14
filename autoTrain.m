@@ -23,7 +23,7 @@ global beamBreak sleeponh sleeptimeh sleepTime recchan resetTrg offTrg;
 switch action
     %% START button pushed
     case 'START' %start button pushed
-        
+        %% Set a bunch of parameters
         % Start the timer that keeps track of session duration
         beginSession=tic;
         
@@ -32,9 +32,9 @@ switch action
         writeDigitalPin(Box.Arduino,Box.LEDPin2,0); %turn off green led
         writeDigitalPin(Box.Arduino,Box.LEDPin3,0); %turn off blue led
         
-        % Keep track of the day of the week
-        Dstart=datetime;
-        DayNumberStart=weekday(Dstart);
+                                                                                % Keep track of the day of the week
+                                                                                Dstart=datetime;
+                                                                                DayNumberStart=weekday(Dstart);
         
         % Turn unaccessible all the parameters buttons
         set([thrah thrdh thrfh thrrh recdh sessionth sessionidh batnameh ...
@@ -48,15 +48,15 @@ switch action
         chanC=recC{get(recchanh,'value')}; %should be 1 or 2
         channel=str2double(chanC);
         
-        %set amplitude threshold
-        thrsha=get(thrah,'string'); 
-        ampThresh=str2double(thrsha);%-35;
-        
-        % set clipthreshold                         %%UNSURE ABOUT WHAT THIS LINE IS DOING
-        if 1 ~= soundmexpro('clipthreshold','type','input','value',...
-                10^(ampThresh/20))
-            error('error setting clipthreshold');
-        end
+                                                                                %set amplitude threshold
+                                                                                thrsha=get(thrah,'string'); 
+                                                                                ampThresh=str2double(thrsha);%-35;
+
+                                                                                % set clipthreshold                         %%UNSURE ABOUT WHAT THIS LINE IS DOING
+                                                                                if 1 ~= soundmexpro('clipthreshold','type','input','value',...
+                                                                                        10^(ampThresh/20))
+                                                                                    error('error setting clipthreshold');
+                                                                                end
         
         %set freq trigger threshold
         thrshf=get(thrfh,'string');
@@ -73,10 +73,10 @@ switch action
         recd=get(recdh,'string');
         recDur=str2double(recd);
         
-        % set record length for audio ring buffer
-        if 1 ~= soundmexpro( 'recbufsize', 'value', recDur*fs)
-            error(['error calling ''loadfile''' error_loc(dbstack)]);
-        end
+                                                                                % set record length for audio ring buffer
+                                                                                if 1 ~= soundmexpro( 'recbufsize', 'value', recDur*fs)
+                                                                                    error(['error calling ''loadfile''' error_loc(dbstack)]);
+                                                                                end
         
         % set duration threshold from gui
         thrshd=get(thrdh,'string');
@@ -127,11 +127,11 @@ switch action
         minBW=get(minbwh,'string');
         minBetween=str2num(minBW);
         
-        %random playback interval generator
-        mresponse = minInt;
-        Mresponse = maxInt;
-        reps = 500000;
-        playbackCountdown=  mresponse +(Mresponse-mresponse).*rand(reps,1);
+                                                                                %random playback interval generator
+                                                                                mresponse = minInt;
+                                                                                Mresponse = maxInt;
+                                                                                reps = 500000;
+                                                                                playbackCountdown=  mresponse +(Mresponse-mresponse).*rand(reps,1);
         
         %get training button & sleepTime parameters
         trainingButton=get(trainonh,'value');
@@ -151,10 +151,10 @@ switch action
             fprintf('Debug session begin >>>>> %s\n',datestr(now,21));
         end
         
-        %optional trial interval control
-        timeInt=minInt:1:maxInt; %trial initiation intervals from 1-5 min spaced 30sec
-        seq=repmat(timeInt',1000,1); %generate matrix of random spaced numbers
-        seqOrder=randperm(length(seq)); %scramble the order of the vectors
+                                                                                %optional trial interval control
+                                                                                timeInt=minInt:1:maxInt; %trial initiation intervals from 1-5 min spaced 30sec
+                                                                                seq=repmat(timeInt',1000,1); %generate matrix of random spaced numbers
+                                                                                seqOrder=randperm(length(seq)); %scramble the order of the vectors
         
         %set save parameters
         date = datestr(now,0);
@@ -165,9 +165,14 @@ switch action
         comments = get(commenth,'string');
         micType = ['EW ' boxNum];
         %recpath=['a' date '_'  sessionType '_' sessionID '_' batName '_ts']; %filename for saving calls
+        
+        
+        %% Initialize output files
         init_save(boxNum) %saves parameter log and creates new event log
         
-        % control vals for button and beam
+        
+        
+        %% control vals for button and beam
         beamBreak = 0; %beam is broken, bat is at port
         beamOpen = 1; %beam is open, bat is away
         beamTime1 = tic;
@@ -185,28 +190,29 @@ switch action
         %         Dinit=datetime;
         %         DayNumberInit=weekday(Dinit);
         %         DayNumberStop=DayNumberInit-1;
-        if DayNumberStart~=DayNumberStop
-            trialNum = 0; %sets trial counter (+1 for cue light on or call)
-            rewardNum=0; %sets reward counter (+1 for reward)
-            callNum=0; %sets call counter when start whole autoTrain (+1 for call)
-            callOnly=0; %sets call counter for recOnly calls
-        end
+                                                                            if DayNumberStart~=DayNumberStop
+                                                                                trialNum = 0; %sets trial counter (+1 for cue light on or call)
+                                                                                rewardNum=0; %sets reward counter (+1 for reward)
+                                                                                callNum=0; %sets call counter when start whole autoTrain (+1 for call)
+                                                                                callOnly=0; %sets call counter for recOnly calls
+                                                                            end
         
         
-        %start the audio recording
+        %% start the audio recording
         soundmexpro('start', ...    % command name
             'length', 0 ...
             );
         soundmexpro('show');
         %switch start button to stop format
         set(starth,'string','STOP','backgroundcolor',[255/255 51/255 51/255]);
-        lastReward=tic; %start timer for last reward for DunceCap
-        stopped=0;
+                                                                            lastReward=tic; %start timer for last reward for DunceCap
+                                                                            stopped=0;
         
         %start general recording audio loop
         playback_i=0;
         while strcmp(get(starth,'string'),'STOP')  %when start button is pushed (in stop format)
             drawnow;
+            
             %starting parameters
             trg=0; %not recording state
             offTrg =0;
@@ -214,17 +220,19 @@ switch action
             beamVal1 = readDigitalPin(a, beamPin1); %check init beam break
             beamVal3= beamOpen; %not reward beam state
             beamVal2 = beamOpen; %not reward beam state
-            ledLoopTime=tic; %timer for cue LED loop
-            playbackTimer=tic;%timer for playback countdown
+                                                                            ledLoopTime=tic; %timer for cue LED loop
+                                                                            playbackTimer=tic;%timer for playback countdown
             soundmexpro('resetclipcount'); %resets clip to 0 so don't accumulate clips when go back into waiting loop
+            
             % get audio input information at all times
             [succ, clipout,clipin]=soundmexpro('clipcount');
             
-            %max Num Reward tag remains open
-            maxR=get(maxrewardh,'string');
-            maxReward=str2num(maxR);
+                                                                            %max Num Reward tag remains open ALREADY DONE AT THE BEGINING OF THE FILE!
+                                                                            maxR=get(maxrewardh,'string');
+                                                                            maxReward=str2num(maxR);
+            
             %rec only button option remains open
-            recOnlyButton=get(recbuttonh,'value');
+                                                                            recOnlyButton=get(recbuttonh,'value'); %THIS SHOULD GO HIGHER UP
             if recOnlyButton ==1 && playbackButton ==0
                 fprintf('Recs Only >>>>> %s\n', datestr(now, 21));
                 if debugButton == 0
