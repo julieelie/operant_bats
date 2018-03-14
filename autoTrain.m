@@ -48,17 +48,32 @@ switch action
         chanC=recC{get(recchanh,'value')}; %should be 1 or 2
         channel=str2double(chanC);
         
-                                                                                %set amplitude threshold
-                                                                                thrsha=get(thrah,'string'); 
-                                                                                ampThresh=str2double(thrsha);%-35;
+        %% Set the threshold amplitude and the duration of the sample that sould reach that threshold for sound detection on input recordings
+        %set amplitude threshold
+        thrsha=get(thrah,'string'); 
+        ampThresh=str2double(thrsha);%-35;
 
-                                                                                % set clipthreshold                         %%UNSURE ABOUT WHAT THIS LINE IS DOING
-                                                                                if 1 ~= soundmexpro('clipthreshold','type','input','value',...
-                                                                                        10^(ampThresh/20))
-                                                                                    error('error setting clipthreshold');
-                                                                                end
+        % set clipthreshold                         
+        if 1 ~= soundmexpro('clipthreshold','type','input','value',...
+                10^(ampThresh/20))
+            error('error setting clipthreshold');
+        end
         
-        %set freq trigger threshold
+        % set duration threshold from gui
+        thrshd=get(thrdh,'string');
+        durThresh=str2double(thrshd);%0.005;
+        feedbbuf=round(durThresh*fs/bufsiz); % THIS IS THE NUMBER OF BUFFERS EXPECTED TO BE CLIPPING FOR A SOUND REACHING AMPLITUDE TRHESHOLD FOR THE DURATION DURTHRESH make proper buffer size (threshdur & fs dependent)
+        
+        %% set the duration of the sound sample that should be recorded upon detection (value taken from gui)
+        recd=get(recdh,'string');
+        recDur=str2double(recd);
+        
+        % set record length for audio ring buffer
+        if 1 ~= soundmexpro( 'recbufsize', 'value', recDur*fs)
+            error(['error calling ''loadfile''' error_loc(dbstack)]);
+        end
+        
+        %% set freq trigger threshold
         thrshf=get(thrfh,'string');
         freqThresh=str2double(thrshf);
         % design a 4th order high pass Butterworth filter with cutoff
@@ -69,19 +84,8 @@ switch action
         thrshr=get(thrrh,'string');
         rmsThresh=str2double(thrshr);
         
-        % set recording duration from gui
-        recd=get(recdh,'string');
-        recDur=str2double(recd);
         
-                                                                                % set record length for audio ring buffer
-                                                                                if 1 ~= soundmexpro( 'recbufsize', 'value', recDur*fs)
-                                                                                    error(['error calling ''loadfile''' error_loc(dbstack)]);
-                                                                                end
         
-        % set duration threshold from gui
-        thrshd=get(thrdh,'string');
-        durThresh=str2double(thrshd);%0.005;
-        feedbbuf=round(durThresh*fs/bufsiz); %make proper buffer size (threshdur & fs dependent)
         
         %set motu gain from gui for saving purposes
         motug=get(motugh,'string');
@@ -225,7 +229,7 @@ switch action
             soundmexpro('resetclipcount'); %resets clip to 0 so don't accumulate clips when go back into waiting loop
             
             % get audio input information at all times
-            [succ, clipout,clipin]=soundmexpro('clipcount');
+            [succ, clipout,clipin]=soundmexpro('clipcount'); % CLIPIN SHOULD BE EQUAL TO 0 HERE BECAUSE IT WAS JUST RESET
             
                                                                             %max Num Reward tag remains open ALREADY DONE AT THE BEGINING OF THE FILE!
                                                                             maxR=get(maxrewardh,'string');
