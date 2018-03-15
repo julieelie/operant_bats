@@ -7,23 +7,29 @@ global dunceCap motuGain recDur ampThresh EventStartSession responseTimer starth
 global playbackTimer playbackTrg responseTrg beamVal1 beamBreak a beamPin4 recbuf recchan;
 global EventComment resetTrg recShift;
 
+%% Querry the number of cliping buffers from last reset
 [succ, clipout,clipin]=soundmexpro('clipcount');
 
-%collect nonrewarded call    
-if max(clipin(channel))>=feedbbuf,
+%% CHECK sound extract that hit the clipping duration threshold    
+if max(clipin(channel))>=feedbbuf
     callOnlyTrigger = datestr(now, 'yyyymmddTHHMMSSFFF');
-    [succ,rectrg,pos]=soundmexpro('recgetdata','channel',recchan); % record sound data
-    filt_trg=filtfilt(B,A,rectrg(end-durThresh*fs:end,1));
-    H=rms(filt_trg);
-    if H<rmsThresh %may need to increase if still get cage noise
-        clipin=clipin.*0;
-    fprintf('low rms %i >>>>> %s\n', H, datestr(now,'HH:MM:SS'));
+    [~,rectrg,~]=soundmexpro('recgetdata','channel',recchan); % get sound data
+    filt_trg=filtfilt(B,A,rectrg(end-durThresh*fs:end,1)); % apply the frequency filter only on the sound segment that hit the minimum # of clipping buffers
+    H=rms(filt_trg); % calculate RMS of the filtered sound extract
+    if H<rmsThresh % Not reaching RMS threshold, the sound extract is discarded. may need to increase if still get cage noise
+        fprintf('rms of frequency filtered sound trigger NOT reaching threshold %i >>>>> %s\n', H, datestr(now,'HH:MM:SS'));
+        pause(durThresh); %check feedback_min_dur that its right THIS IS MOST LIKELY USELESS BECAUSE clippcount is reset at the end of this code and the code wants to check for durThresh buffers above clipping threshold
     else
         %soundmexpro('loadmem','data',video_trigger,'track',0,'loopcount',1);
-        fprintf('rms %i >>>> %s\n', H, datestr(now,21)); 
+        fprintf('rms of frequency filtered sound trigger reaching threshold %i >>>> %s\n', H, datestr(now,21)); 
+        % HERE INSTEAD OF A FIX PAUSE I WOULD RUN A WHILE LOOP UNTIL NO
+        % MORE BUFFERS ARE CLIPPING AND THEN CUSTOMIZE RECBUFSIZE TO
+        % EXTRACT THE DESIRED DURATION
         pause(recShift)
-                                                                                % WHY GETTING THE SOUND DATA AGAIN, HOW IS RECBUF ANYDIFFERENT FROM RECTRG?
-                                                                                [succ,recbuf,pos]=soundmexpro('recgetdata','channel',recchan); % record sound data
+        % extracting a sound section after waiting recShift second to
+        % hopefully get the whole vocalization that triggers the sound
+        % detecttion recShift<recDur
+        [~,recbuf,~]=soundmexpro('recgetdata','channel',recchan); % record sound data
         callOnly = callOnly +1;
         fprintf('4-Call occurred #%i >>>>> %s\n', callOnly, datestr(now,'HH:MM:SS'));
         if debugButton == 1
@@ -65,7 +71,11 @@ if max(clipin(channel))>=feedbbuf,
         end
     end
 end
-%playbackTimer during recOnly period if beamBreak or longer than maxInt
+
+%% Reset the clipping counter
+soundmexpro('resetclipcount'); 
+
+%% playbackTimer during recOnly period if beamBreak or longer than maxInt
 if playbackTrg ==1 && responseTrg ==0 && resetTrg == 0
     beamVal1 = readDigitalPin(a,beamPin4);
     if toc(playbackTimer) >= minInt && beamVal1 == beamBreak || toc(playbackTimer) >= maxInt %playbackCountdown(playback_i)
@@ -86,10 +96,12 @@ if playbackTrg ==1 && responseTrg ==0 && resetTrg == 0
         %responseTrg = 1;
     end
 end
+
 if strcmp(get(starth,'string'),'START')
     drawnow;
     return
 end
-soundmexpro('resetclipcount'); %reset recording trigger
-pause(durThresh); %check feedback_min_dur that its right
+
+
+
 end

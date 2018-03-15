@@ -48,44 +48,69 @@ switch action
         chanC=recC{get(recchanh,'value')}; %should be 1 or 2
         channel=str2double(chanC);
         
-        %% Set the threshold amplitude and the duration of the sample that sould reach that threshold for sound detection on input recordings
-        %set amplitude threshold
+        %% Sound detetction parameters
+%         The sound detection algorithm is based on the clipping counting
+%           of the sound card. A threshold of intensity is fixed by the user
+%           for considering a sound sample to be clipping using the clipthreshold
+%           soundmexpro command, then the number of buffers (short sound extracts)
+%           that clipped (at least 2 clipping points withing the sound sample)
+%           are regularly querried by matlab. as soon as the number of buffers
+%           clipping exceeds the duration threshold set by the user, the sound
+%           extract is considered as a potential sound event and further investigated
+%           in terms of RMS in a certain frequency range (4th order high
+%           pass Butterworth filter applied on the extract before calculating RMS)
+
+     %Set the threshold amplitude and the duration of the sample that should reach that threshold for sound to be detected on input recordings
+        % set threshold in terms of amplitude
         thrsha=get(thrah,'string'); 
         ampThresh=str2double(thrsha);%-35;
 
-        % set clipthreshold                         
+        % set threshold in terms of clipping threshold on soundmex                        
         if 1 ~= soundmexpro('clipthreshold','type','input','value',...
                 10^(ampThresh/20))
             error('error setting clipthreshold');
         end
         
-        % set duration threshold from gui
+        % get duration threshold from gui feedbbuf IS THE NUMBER OF BUFFERS
+        % EXPECTED TO BE CLIPPING FOR A SOUND REACHING AMPLITUDE TRHESHOLD FOR THE DURATION DURTHRESH
         thrshd=get(thrdh,'string');
         durThresh=str2double(thrshd);%0.005;
-        feedbbuf=round(durThresh*fs/bufsiz); % THIS IS THE NUMBER OF BUFFERS EXPECTED TO BE CLIPPING FOR A SOUND REACHING AMPLITUDE TRHESHOLD FOR THE DURATION DURTHRESH make proper buffer size (threshdur & fs dependent)
+        feedbbuf=round(durThresh*fs/bufsiz); % make proper # of buffers (threshdur & fs dependent)
         
-        %% set the duration of the sound sample that should be recorded upon detection (value taken from gui)
+        
+     %Set the duration of the sound sample that should be recorded upon detection (value taken from gui)
+        % set duration of the record buffer for the function recgetdata
+        % Note that is buffer is different from the internal buffer sound
+        % card. This RecBuf is the length of the sound vector that should
+        % be retrieve by soundmexpro when the function recgetdata is called
+        % get the desired duration from the gui 
         recd=get(recdh,'string');
         recDur=str2double(recd);
-        
-        % set record length for audio ring buffer
+        if recDur<=durThresh
+            error('Duration of sound sample that should be recorded upon detection\nis smaller than the duration of the sound extract on which\nthe threshold for detection was calculated:\n(recDur<=durThresh or on the gui RecDur<=Thresh Dur)\nIt needs to be larger!!!\n');
+        end
+        if recDur<=recShift
+            error('Duration of sound sample that should be recorded upon detection\nis smaller than the shift used to postpone sound recording after sound detection threshold is hit:\n(recDur<=recShift)\nIt needs to be larger!!!\n');
+        end
         if 1 ~= soundmexpro( 'recbufsize', 'value', recDur*fs)
-            error(['error calling ''loadfile''' error_loc(dbstack)]);
+            error(['error calling ''recbufsize''' error_loc(dbstack)]);
         end
         
-        %% set freq trigger threshold
+     %Set the frequency filter that is applied on the sound extract candidate
+        % get the frequency threshold from the gui
         thrshf=get(thrfh,'string');
         freqThresh=str2double(thrshf);
         % design a 4th order high pass Butterworth filter with cutoff
         % frequency at freqThresh
         [B,A]=butter(4,2*freqThresh*1000/fs,'high'); %increase freqthresh to make higher thresh
         
-        % set RMS trigger threshold
+      %Set the RMS threshold that the filtered sound extract candidate
+      %should reach to be kept as a vocalization trigger.
         thrshr=get(thrrh,'string');
         rmsThresh=str2double(thrshr);
         
         
-        
+        %% OTHER THINGS
         
         %set motu gain from gui for saving purposes
         motug=get(motugh,'string');
@@ -160,6 +185,10 @@ switch action
                                                                                 seq=repmat(timeInt',1000,1); %generate matrix of random spaced numbers
                                                                                 seqOrder=randperm(length(seq)); %scramble the order of the vectors
         
+        
+        
+        
+        %% Initialize output files
         %set save parameters
         date = datestr(now,0);
         dateTime = set(dateh,'string',date); %sets the date into the gui
@@ -169,9 +198,6 @@ switch action
         comments = get(commenth,'string');
         micType = ['EW ' boxNum];
         %recpath=['a' date '_'  sessionType '_' sessionID '_' batName '_ts']; %filename for saving calls
-        
-        
-        %% Initialize output files
         init_save(boxNum) %saves parameter log and creates new event log
         
         
@@ -212,9 +238,9 @@ switch action
                                                                             lastReward=tic; %start timer for last reward for DunceCap
                                                                             stopped=0;
         
-        %start general recording audio loop
+        %% start general recording audio loop
         playback_i=0;
-        while strcmp(get(starth,'string'),'STOP')  %when start button is pushed (in stop format)
+        while strcmp(get(starth,'string'),'STOP')  %when start button is pushed (in stop format)  %%% THAT LINE IS MOST LIKELY USELESS BECAUSE WE ARE ALREADY I A SWITCH CASE FOR START BEING HIT
             drawnow;
             
             %starting parameters
@@ -235,29 +261,32 @@ switch action
                                                                             maxR=get(maxrewardh,'string');
                                                                             maxReward=str2num(maxR);
             
-            %rec only button option remains open
-                                                                            recOnlyButton=get(recbuttonh,'value'); %THIS SHOULD GO HIGHER UP
-            if recOnlyButton ==1 && playbackButton ==0
+            %rec only button option remains open for changes so we need to
+            %check it at the beginning of each loop to make sure we still
+            %want to record vocalizations only (button still on high
+            %position, =1)
+            if get(recbuttonh,'value') && ~get(playbackbuttonh,'value')
                 fprintf('Recs Only >>>>> %s\n', datestr(now, 21));
                 if debugButton == 0
                     fprintf(logFileId, formatSpec, datestr(now, 'yyyymmddTHHMMSSFFF'),...
                         sessionType, sessionID, batName, EventRecsOnly,trialNum,callNum,rewardNum,callOnly,comments);
                 end
-                while recOnlyButton ==1 && playbackButton == 0 && strcmp(get(starth,'string'),'STOP')
-                    playbackButton = get(playbackbuttonh,'value'); %switch out if push playback
-                    recOnlyButton=get(recbuttonh,'value'); %always check recOnly button
+                while get(recbuttonh,'value') && ~get(playbackbuttonh,'value') && strcmp(get(starth,'string'),'STOP')
                     recOnly(fs,feedbbuf,durThresh,recDur,pre_trg,channel) %function to record only
-                    if recOnlyButton == 0 && strcmp(get(starth,'string'),'STOP')
-                        fprintf('Begin Session: %s\n', datestr(now,21));
-                        if debugButton == 0
-                            fprintf(logFileId, formatSpec, datestr(now,'yyyymmddTHHMMSSFFF'),...
-                                sessionType, sessionID, batName, EventStartSession,'','','',comments);
-                        end
-                    end
+                                                                            %HERE I WOULD FEED IN THE LOG INFO ELSEWHRER AT THE BEGINING OF THE SESSION LOOP! 
+                                                                            if recOnlyButton == 0 && strcmp(get(starth,'string'),'STOP')
+                                                                                fprintf('Begin Session: %s\n', datestr(now,21));
+                                                                                if debugButton == 0
+                                                                                    fprintf(logFileId, formatSpec, datestr(now,'yyyymmddTHHMMSSFFF'),...
+                                                                                        sessionType, sessionID, batName, EventStartSession,'','','',comments);
+                                                                                end
+                                                                            end
                 end
             end
             
-            %option to shut off the training after x hrs
+            
+            % option to shut off the training after x hrs but keep
+            % recording vocalizations
             trainingButton=get(trainonh,'value');
             if trainingButton==1 % gui button is pushed
                 if toc(beginSession) >= autoOff*60*60
@@ -274,7 +303,10 @@ switch action
                 end
             end
             
-            %playback button option remains open
+            
+            
+            
+            % playback button option remains open
             playbackButton = get(playbackbuttonh,'value');
             playbackTimer = tic;
             if playbackButton == 0
@@ -290,9 +322,12 @@ switch action
                     playback_i = 0;
                 end
             end
-            %option to set sleep time on/off
-            sleepButton = get(sleeponh,'value');
-            if sleepButton==1 % gui button is pushed
+            
+            
+            
+            %option to set sleep time on/off and kep recording
+            %vocalizations emitted during the break
+            if  get(sleeponh,'value') % gui button is pushed
                 sleepn=0;
                 while str2num(datestr(now,'HH'))>=trainEnd ||...
                         str2num(datestr(now,'HH'))<= trainStart && strcmp(get(starth,'string'),'STOP')
@@ -306,11 +341,16 @@ switch action
                         sleepn=sleepn+1;
                     end
                     % go into only rec mode during above hours
-                    timeOut=tic;
-                    playbackTrg = 0;
+                                                                                % UNSURE WHAT THIS TIMER IS USED FOR 
+                                                                                timeOut=tic;
+                                                                                % WHY WOULD YOU CHANGE THE SETTING PARAMETERS WHILE ON SLEEP?
+                                                                                playbackTrg = 0;
                     recOnly(fs,feedbbuf,durThresh,recDur,pre_trg,channel) %rec only during sleep time
                 end
             end
+            
+            
+            
             
             %main rec loop
             while max(clipin(channel)) < feedbbuf && recOnlyButton == 0 ...
@@ -325,10 +365,16 @@ switch action
                 playbackButton = get(playbackbuttonh,'value');
                 %continue pulling in sound
                 [succ, clipout,clipin]=soundmexpro('clipcount');
+                
                 soundmexpro('resetclipcount'); %continue reseting count to detect call
+                
                 %if toc(ledLoopTime)<seq(seqOrder(trialNum)) %only do pause for checking recording if cue time is up
                 pause(durThresh);
                 %end
+                
+                % THIS PIECE CHECK IF A SOUND WAS DETECTED AND IF THE PIECE
+                % OF SOUND REACHES RMS THRESHOLD AFTER FILTERING FIND OUT
+                % WHO EMITTED IT
                 %high pass filter for audio before triggering cue/reward
                 if max(clipin(channel))>=feedbbuf
                     callTrigger = datestr(now, 'yyyymmddTHHMMSSFFF');
@@ -360,6 +406,7 @@ switch action
                     end
                     %fprintf('rms %i >>>> %s\n', H, datestr(now,21)); 
                 end
+                
                 %check BB and filter if bat waits min wait time before triggering cue/reward
                 beamVal1 = readDigitalPin(a, beamPin1); %keep checking trial BB
                 if playbackTrg ~= 2 && beamVal1 == beamBreak
@@ -376,6 +423,10 @@ switch action
                 else
                     beamBreakCount=0;
                 end
+                
+                
+                
+                % THIS PIECE OF CODE IS BROKEN 
                 if playbackTrg == 1 && offTrg == 0
                     while responseTrg == 0
                         recOnly(fs,feedbbuf,durThresh,recDur,pre_trg,channel) %rec only post training time
@@ -385,6 +436,7 @@ switch action
                         end
                     end
                     timeOutTrg = 0;
+                    
                     %if trial beam broken
                     if debugButton == 0
                         trialNum=trialNum+1; %end of trial
@@ -392,6 +444,7 @@ switch action
                             sessionType, sessionID, batName, EventTrialStart,trialNum,callNum,rewardNum,callOnly,comments);
                     end
                     fprintf('Broke Beam, Trial #%i Initiated >>>>> %s\n', trialNum, datestr(now,21));
+                    
                     %manually playback a call from the selector
                     playbackF=get(playbackfileh,'string'); %select all strings in dropdown menu
                     playbackF2=playbackF{get(playbackfileh,'value')}; %select the string you chose
@@ -435,6 +488,12 @@ switch action
                     playbackTrg = 3;
                 end
             end
+            
+            
+            
+            
+            
+            % THIS PIECE OF CODE REACT UPON BREAKING OF THE BEAM
             %check for trial bb or call to start trial
             beamTime1 = tic; %keep timer for cue LED & trial
             beamVal2 = beamOpen; %open front reward beam
@@ -442,16 +501,19 @@ switch action
             if timeOutTrg == 0
                 %trial beam is broken, trial initiated with no playback
                 if beamVal1 == beamBreak && playbackTrg == 0
-                    %if call detected or trial beam broken
+                    %if trial beam broken
                     if debugButton == 0
                         trialNum=trialNum+1;
                         fprintf(logFileId, formatSpec, datestr(now, 'yyyymmddTHHMMSSFFF'),...
                             sessionType, sessionID, batName, EventTrialStart,trialNum,callNum,rewardNum,callOnly,comments);
                     end
                     fprintf('Broke Beam, Trial #%i Initiated >>>>> %s\n', trialNum, datestr(now,21));
+                    
+                    % WHY GETTING PLAY BACK FILE SINCE PLAYBACKtRG IS 0????
                     %manually playback a call from the selector
                     playbackF=get(playbackfileh,'string'); %select all strings in dropdown menu
                     playbackF2=playbackF{get(playbackfileh,'value')}; %select the string you chose
+% I DOUBT THESE LINES WORK             
                     load(playbackF2); %load that file for playback
                     playbackFile = recbuf; %may need to change recbuf if it is a different variable
                     % play call
@@ -623,7 +685,8 @@ switch action
                         pause(motorT*2);
                     end
                     stop(dcm);
-                    writeDigitalPin(a,ledPin3,0); %turn off reward LED
+                                                                                    % ALREADY DONE JUST ABOVE
+                                                                                    writeDigitalPin(a,ledPin3,0); %turn off reward LED
                     timeOutCount = 0; %reset timeout counter to 0
                     lastReward=tic; %timer for timeOutReset
                     beamBreakTrg=beamOpen;
@@ -653,12 +716,15 @@ switch action
                         end
                         trg=0; %reset recording state
                     end
+                    
                     while toc(lastReward)<minBetween %delay before allowing next trial
                         playbackTrg = 0;
                         %aud record only during interval period
                         recOnly(fs,feedbbuf,durThresh,recDur,pre_trg,channel) %function to record only
                     end
+                    
                     beamVal2 = beamOpen;
+                    
                     % use this when the bats are split into 2 compartments
                 elseif beamVal3 == beamBreak && playbackTrg ~= 3 && offTrg == 0%back reward beam broken
                     writeDigitalPin(a,ledPin3,0); %turn off blue LED
@@ -711,6 +777,7 @@ switch action
                         recOnly(fs,feedbbuf,durThresh,recDur,pre_trg,channel) %function to record only
                     end
                     beamVal3 = beamOpen;
+                
                 elseif toc(responseTimer) > responseTime && responseTrg == 1 && offTrg == 0
                     beamBreakTrg = beamOpen;
                     ledTime1 = tic; %timer for LED timeout
@@ -727,6 +794,7 @@ switch action
                     responseTrg = 0;
                     beamTime1 = tic;
                     %bat didn't go to port, illuminate timeout led
+                
                 elseif toc(beamTime1) >= maxDelay && timeOutTrg ==0 && strcmp(get(starth,'string'),'STOP')
                     beamBreakTrg = beamOpen;
                     ledTime1 = tic; %timer for LED timeout

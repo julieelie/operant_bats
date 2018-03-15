@@ -53,17 +53,19 @@ Box.SoundCard.feedbbuf=round(Box.SoundCard.feedback_min_dur*fsq/Box.SoundCard.bu
     'track', Box.SoundCard.Track...        % new mapping
 );
 
-%% check clipthreshold
+%% changing clipthreshold
 if 1 ~= soundmexpro('clipthreshold','type','input','value',...
         10^(Box.SoundCard.feedback_threshold_output/20))
     error('error setting clipthreshold %s\n', datestr(now,30));
 end
+
+%% Disabling writing to the recording file
 if 1 ~= soundmexpro('recpause','value', ones(1,1),...
         'channel',0)
     error('error setting recpause %s\n', datestr(now,30));
 end
 
-%% Set buffer filename
+%% Set buffer filename for the only input channel
 soundmexpro('recfilename', 'filename', Box.SoundCard.BufferFile, 'channel', 0);
 
 end
