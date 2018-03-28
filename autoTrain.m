@@ -968,7 +968,7 @@ switch action
         close(fh)
         clear all;
         responseTrg = 5;
-        %save comments whenever push button
+        %% save comments whenever push button
     case 'Comments'
         commenth=findobj(fh,'tag','comments');
         commentstr=get(commenth,'string');

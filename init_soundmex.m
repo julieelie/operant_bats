@@ -32,10 +32,6 @@ Box.SoundCard.feedback_threshold_output=-35; %keep high and gain with the cuemix
 Box.SoundCard.feedback_min_dur=0.005;
 Box.SoundCard.pre_trg=0.1;
 
-%% trigger video onset
-%vt = load('C:\Users\tobias\Desktop\code\initiation\Trigger_Pulse.mat');
-%video_trigger = vt.trigger;
-
 %% initiate soundmexpro
 ID='MOTU Audio ASIO';
 nbufs=2; %Set the # of buffers?

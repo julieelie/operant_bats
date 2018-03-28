@@ -36,11 +36,6 @@ configurePin(Box.Arduino, Box.BeamPin4, 'pullup');
 configurePin(Box.Arduino, Box.LEDPin1, 'DigitalOutput');
 configurePin(Box.Arduino, Box.LEDPin2, 'DigitalOutput');
 configurePin(Box.Arduino, Box.LEDPin3, 'DigitalOutput');
-%options
-%Box.buttonPin = 'D12'; %bream break input pin
-%Box.servoPin = 'D2'; %firgelli output pin for LAC board
-%configurePin(Box.Arduino, Box.buttonPin, 'DigitalInput');
-%configurePin(Box.Arduino, Box.servoPin, 'servo');
 
 % Test the LEDs
 % first light them up
