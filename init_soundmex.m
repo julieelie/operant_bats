@@ -19,6 +19,9 @@ elseif Box.ID == 7
 elseif Box.ID == 9
     Box.Channels.Rec = 0; % or (0:1)
     Box.Channels.Play = 1;
+elseif Box.ID == 3
+    Box.Channels.Rec = 0; % or (0:1)
+    Box.Channels.Play = 1;
 end
 Curr_path = pwd;
 filepartitions=strfind(Curr_path, '\');

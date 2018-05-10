@@ -10,6 +10,8 @@ elseif Box.ID == 2
     port = 'COM4';
 elseif Box.ID == 9
     port = 'COM5';
+elseif Box.ID == 3
+    port = 'COM3';
 end
 %port = '/dev/cu.usbmodem1421'; %for macs
 
