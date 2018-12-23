@@ -38,7 +38,7 @@ ColorCode = get(groot,'DefaultAxesColorOrder');
 ReTriggerVocId = find(~isnan(Events{EventsRewardCol}));
 ReVocId = find(~(isnan(Events{EventsRewardCol}) + isinf(Events{EventsRewardCol})));
 
-figure(2)
+figure(1)
 plot(Events{EventsTimeCol}(VocId)/60,1:length(VocId), 'k-', 'Linewidth',2)
 hold on
 plot(Events{EventsTimeCol}(ReTriggerVocId)/60, 1:length(ReTriggerVocId), '-','Color',ColorCode(1,:),'Linewidth',2)
@@ -52,75 +52,115 @@ title(sprintf('Subjects: %s  Date: %s  Time: %s', DataFile(1:4), DataFile(6:11),
 hold off
 
 %% This section is getting ready a plot around the time of one given detected vocalization
-% List of all the detected calls
-% Chose a vocalization to center the vizualization tool
+% first get the length of all files recorded to localize extract within the
+% files
 
-% Calculate the offset of each soundfile output from the begining of the
-% task in number of samples. Offset_Y is the position of the first sample
-% of each file in the continuous recording (because we are dropping some
-% samples at each file change)
-Offset_Filename = fullfile(AudioDataPath, sprintf('%s_Offset_Y.m',DataFile(1:16)));
-if ~exist(Offset_Filename, 'file')
-    fprintf(1,'Calculating offset of each sound file to allign extract...\n')
-    FileChangeId = find(strcmp('ChangeFile', Events{EventsEventTypeCol}));
+Length_Filename = fullfile(AudioDataPath, sprintf('%s_Length_Y.m',DataFile(1:16)));
+if ~exist(Length_Filename, 'file')
+    fprintf(1,'Calculating length of each sound file to allign extract...\n')
     Nfiles = length(WavFileStruc);
-    Offset_Y = nan(Nfiles,1);
     Length_Y = nan(Nfiles,1);
-    ExpDelay_Y = nan(Nfiles,1);
     for yy=1:Nfiles
         fprintf(1,'File %d/%d\n', yy,Nfiles)
         % get the files in the correct order
         Wavefile=dir(fullfile(WavFileStruc(yy).folder, sprintf('%s*_%d.wav',WavFileStruc(yy).name(1:(end-7)),yy)));
         Wavefile_local = fullfile(WavFileStruc(yy).folder, Wavefile.name);
         [Y,FS] = audioread(Wavefile_local);
-        if yy==1 % only calculate the length of the file, there is no offset
-            Length_Y(yy) = length(Y);
-            Offset_Y(yy) = 0;
-            ExpDelay_Y(yy) = 0;
-        else
-            % store the file length
-            Length_Y(yy) = length(Y);
-            % find the first snip of that sequence
-            for ss=1:length(DataSnipStruc)
-                IndStamp1 = strfind(DataSnipStruc(ss).name, '_');
-                IndStamp_last = IndStamp1(end);
-                Sequence = str2double(DataSnipStruc(ss).name(IndStamp1(end-1)+1));
-                if Sequence == yy
-                    [Ysnip,~] = audioread(fullfile(DataSnipStruc(ss).folder, DataSnipStruc(ss).name));
-                    Stamp = str2double(DataSnipStruc(ss).name((IndStamp_last+1):end-3)); % Stamp is the position of the first sample of Ysnip
-                    break
-                end
-            end
-            if Stamp<0
-                Stamp = 2*2147483647 + Stamp;
-            end
-            
-            % Find the delay calculated by matlab when changing of file
-            ExpDelay_sec = Events{EventsRewardCol}(FileChangeId(yy-1));
-            ExpDelay_Y(yy) = ExpDelay_sec*FS;
-            
-            % Align that snip with the wav of the sequence and get the stamp of the snip
-            Hyp_Stamp = Stamp-cumsum(Length_Y(1:(yy-1))) + cumsum(Offset_Y(1:(yy-1))) + ExpDelay_Y(yy); % This is the hypothetical position of the first sample of Ysnip in the present recording
-            Y_extract = Y((Hyp_Stamp-length(Ysnip)) : (Hyp_Stamp+2*length(Ysnip)));
-            Ncorr = length(Y_extract) - length(Ysnip);
-            Xcor = nan(Ncorr,1);
-            for cc=1:Ncorr
-                Xcor(cc) = corr(Ysnip,Y_extract(cc:(cc+length(Ysnip+1)))); % Running a cross correlation between the raw signal centered around the hypothetize position of the snippet and the snippet of sounds
-            end
-            [~,I] = max(abs(Xcor)); % I is the first index of Y_extract that is best alligned with the first index of Ysnip
-            True_Stamp = Hyp_Stamp-length(Ysnip) + I; % This is the index of the first element of Ysnip in Y
-            Offset_Y(yy) = Stamp-True_Stamp+1; % This is the position of the first element of Y in the continuous recording
-            plot(1:Ncorr,Xcor)
-            hold on
-            line([I I], [min(Xcor) max(Xcor)], 'Color','r', 'LineStyle','--');
-            text(I , mean(Xcor), sprintf('%d',I))
-            hold off
-            
-            Offset_Y(yy) = Stamp + length(Ysnip) -1 - Alligned; % Stamp is the position of the first sample of Ysnip
-        end
+        Length_Y(yy) = length(Y);
     end
-    save(Offset_Filename,'Offset_Y', 'Length_Y')
+    save(Length_Filename,'Length_Y')
+else
+    load(Length_Filename, 'Length_Y');
 end
+
+
+            
+% List of all the detected calls
+% Chose a vocalization to center the vizualization tool
+
+
+
+
+% % Calculate the offset of each soundfile output from the begining of the
+% % task in number of samples. Offset_Y is the position of the first sample
+% % of each file in the continuous recording (because we are dropping some
+% % samples at each file change)
+% Length_Filename = fullfile(AudioDataPath, sprintf('%s_Offset_Y.m',DataFile(1:16)));
+% if ~exist(Length_Filename, 'file')
+%     fprintf(1,'Calculating offset of each sound file to allign extract...\n')
+%     FileChangeId = find(strcmp('ChangeFile', Events{EventsEventTypeCol}));
+%     Nfiles = length(WavFileStruc);
+%     Offset_Y = nan(Nfiles,1);
+%     Length_Y = nan(Nfiles,1);
+%     ExpDelay_Y = nan(Nfiles,1);
+%     for yy=1:Nfiles
+%         fprintf(1,'File %d/%d\n', yy,Nfiles)
+%         % get the files in the correct order
+%         Wavefile=dir(fullfile(WavFileStruc(yy).folder, sprintf('%s*_%d.wav',WavFileStruc(yy).name(1:(end-7)),yy)));
+%         Wavefile_local = fullfile(WavFileStruc(yy).folder, Wavefile.name);
+%         [Y,FS] = audioread(Wavefile_local);
+%         if yy==1 % only calculate the length of the file, there is no offset
+%             Length_Y(yy) = length(Y);
+%             Offset_Y(yy) = 1;
+%             ExpDelay_Y(yy) = 0;
+%         else
+%             % store the file length
+%             Length_Y(yy) = length(Y);
+%             % find the first snip of that sequence
+%             for ss=1:length(DataSnipStruc)
+%                 IndStamp1 = strfind(DataSnipStruc(ss).name, '_');
+%                 IndStamp_last = IndStamp1(end);
+%                 Sequence = str2double(DataSnipStruc(ss).name((IndStamp1(end-1)+1): (IndStamp1(end)-1)));
+%                 Stamp=[];
+%                 Ysnip = [];
+%                 if Sequence == yy
+%                     [Ysnip,~] = audioread(fullfile(DataSnipStruc(ss).folder, DataSnipStruc(ss).name));
+%                     Stamp = str2double(DataSnipStruc(ss).name((IndStamp_last+1):end-3)); % Stamp is the position of the first sample of Ysnip
+%                     break
+%                 end
+%             end
+%             if Stamp<0
+%                 Stamp = 2*2147483647 + Stamp;
+%             end
+%             
+%             if isempty(Stamp)
+%             % Find the delay calculated by matlab when changing of file
+%             ExpDelay_sec = Events{EventsRewardCol}(FileChangeId(yy-1));
+%             ExpDelay_Y(yy) = round(ExpDelay_sec*FS);
+%             
+%             % Align that snip with the wav of the sequence and get the stamp of the snip
+%             Hyp_Stamp = Stamp-(sum(Length_Y(1:(yy-1))) + sum(Offset_Y(1:(yy-1))) + ExpDelay_Y(yy)); % This is the hypothetical position of the first sample of Ysnip in the present recording
+%             Y_extract = Y((Hyp_Stamp-length(Ysnip)) : (Hyp_Stamp+2*length(Ysnip)));
+%             Ncorr = length(Y_extract) - length(Ysnip);
+%             Xcor = nan(Ncorr,1);
+%             for cc=1:Ncorr
+%                 Xcor(cc) = corr(Ysnip,Y_extract(cc:(cc+length(Ysnip)-1))); % Running a cross correlation between the raw signal centered around the hypothetize position of the snippet and the snippet of sounds
+%             end
+%             [~,I] = max(abs(Xcor)); % I is the first index of Y_extract that is best alligned with the first index of Ysnip
+%             True_Stamp = Hyp_Stamp-length(Ysnip) + I; % This is the index of the first element of Ysnip in Y
+%             Offset_Y(yy) = Stamp-True_Stamp+1; % This is the position of the first element of Y in the continuous recording
+%             figure(2)
+%             cla
+%             subplot(1,2,1)
+%             plot(1:Ncorr,Xcor)
+%             hold on
+%             line([I I], [min(Xcor) max(Xcor)], 'Color','r', 'LineStyle','--');
+%             text(I , mean(Xcor), sprintf('%d',I))
+%             xlabel('Lag')
+%             ylabel('correlation coefficient')
+%             hold off
+%             subplot(1,2,2)
+%             plot(Y((Stamp-Offset_Y(yy)) : (Stamp-Offset_Y(yy)+ length(Ysnip)-1)), 'k-', 'LineWidth',2)
+%             hold on
+%             plot(Ysnip, 'r-')
+%             hold off
+%             legend('Continuous recording','SoundSnippet')
+%             title(sprintf('File %d/%d\n', yy,Nfiles))
+%             pause()
+%         end
+%     end
+%     save(Length_Filename,'Offset_Y', 'Length_Y')
+% end
 
 %% Plot the results
 fprintf(1,'Now plot the results around a given call\n')
@@ -135,34 +175,43 @@ while ~isempty(IndCenterVoc)
     for ss=1:length(FullStamps)
         Ind_ = strfind(FullStamps{ss}, '_');
         Stamp = str2double(FullStamps{ss}((Ind_+1):end));
+        if Stamp<0
+            Stamp = 2*2147483647 + Stamp; % Correcion of soundmexpro bug that coded numbers in 32 bits instead of 64bits
+        end
         MinStamp = floor(Stamp/(60*FS));
         SecStamp = (Stamp - (MinStamp*60*FS))/FS;
         SoundtimeMinSec{ss} = sprintf('%d %dmin %.1fs', ss, MinStamp, SecStamp);
         fprintf(1, '%d. %s\n', ss,SoundtimeMinSec{ss})
     end
     IndCenterVoc = input('Index of your choice (leave empty to quit):\n');
+    if isempty(IndCenterVoc)
+        break
+    end
     
     Ind_ = strfind(FullStamps{IndCenterVoc}, '_');
     Seq = str2double(FullStamps{IndCenterVoc}(1:(Ind_-1)));
     Stamp = str2double(FullStamps{IndCenterVoc}((Ind_+1):end));
+    if Stamp<0
+        Stamp = 2*2147483647 + Stamp; % Correcion of soundmexpro bug that coded numbers in 32 bits instead of 64bits
+    end
     
     % Get the recording data for the corresponding sequence
-    WavFileStruc = dir(fullfile(AudioDataPath, sprintf('%s*mic*_%d.wav',DataFile(1:16), Seq)));
+    WavFileStruc_local = dir(fullfile(AudioDataPath, sprintf('%s*mic*_%d.wav',DataFile(1:16), Seq)));
     try
-        Wavefile_local = fullfile(WavFileStruc.folder, WavFileStruc.name);
+        Wavefile_local = fullfile(WavFileStruc_local.folder, WavFileStruc_local.name);
         [Y,FS] = audioread(Wavefile_local);
     catch
         fprintf(1,'Warning: the audiofile %s cannot be read properly and will not be plotted\n', Wavefile_local);
         Y = 0;
     end
-    Y_section_beg = max(1,Stamp - Offset_Y(Seq) - 60*FS); % Make sure we don't request before the beginning of the section
-    Pre_stamp = min(60*FS, Stamp - Offset_Y(Seq));
-    Y_section_end = min(length(Y), Stamp - Offset_Y(Seq) + 60*FS); % Make sure we don't request after the beginning of the section
-    Post_stamp = min(60*FS, length(Y)- (Stamp - Offset_Y(Seq)));
+    Y_section_beg = max(1,Stamp - sum(Length_Y(1:(Seq-1))) - 60*FS); % Make sure we don't request before the beginning of the section
+    Pre_stamp = min(60*FS, Stamp - sum(Length_Y(1:(Seq-1))));
+    Y_section_end = min(length(Y), Stamp - sum(Length_Y(1:(Seq-1))) + 60*FS); % Make sure we don't request after the beginning of the section
+    Post_stamp = min(60*FS, length(Y)- (Stamp - sum(Length_Y(1:(Seq-1)))));
     Y_section = Y(Y_section_beg:Y_section_end);
     
     % Plot the waveforms of the recording around the stamp of the vocalization
-    figure(1)
+    figure(2)
     cla
     plot(Y_section, 'Color', 'k')
     
@@ -184,7 +233,7 @@ while ~isempty(IndCenterVoc)
             Stamp_local_context = Stamp_local - Stamp + Pre_stamp;
             Sequence = str2double(DataSnipStruc(ss).name(IndStamp1(end-1)+1));
             Voc_event_nb = Voc_event_nb + 1;
-            figure(1)
+            figure(2)
             hold on
             plot(Stamp_local_context:(Stamp_local_context+length(Ysnip)-1), Ysnip, 'Color', 'r')
             % Search for the corresponding datapoint in the event log
@@ -243,7 +292,7 @@ while ~isempty(IndCenterVoc)
     ColorBack(find(ReBack==0),:) = repmat([0 0 0], sum(ReBack==0),1);
     ColorFront(find(isnan(ReFront)),:) = repmat([1 0 0],sum(isnan(ReFront)),1);
     ColorBack(find(isnan(ReBack)),:) = repmat([1 0 0], sum(isnan(ReBack)),1);
-    figure(1)
+    figure(2)
     hold on
     sc=scatter(Stamp_all_log+SnipDur_log-1, 1.2*ones(length(VocId_log),1), 10, ColorFront, 'filled');
     hold on
@@ -251,7 +300,7 @@ while ~isempty(IndCenterVoc)
     
     XaxisRes=20;
     LengthY = length(Y_section);
-    set(gca, 'XLim',[0;Length(Y)]);
+    set(gca, 'XLim',[0;LengthY]);
     
     if (LengthY/FS)>XaxisRes
         XaxisStep = round(LengthY/(FS*XaxisRes));
