@@ -316,7 +316,7 @@ if TranscExtract
         end
     end
     % Alligning TTL pulses between soundmexpro and Deuteron
-    align_soundmexAudio_2_logger(AudioDataPath, Logger_dir, ExpStartTime,'TTL_pulse_generator','Avisoft','Method','RiseFall');
+    align_soundmexAudio_2_logger(AudioDataPath, Logger_dir, ExpStartTime,'TTL_pulse_generator','Avisoft','Method','RiseFall', 'Session_strings', {'all voc reward start', 'all voc reward stop'});
     voc_localize_operant(DataSnipStruc(1).folder, DataPath, DataFile(6:11), DataFile(13:16))
 else
     voc_localize_operant(DataSnipStruc(1).folder, DataPath, DataFile(6:11), DataFile(13:16),'TransceiverTime',0)
