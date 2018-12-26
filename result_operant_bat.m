@@ -1,6 +1,7 @@
 function result_operant_bat(Path2ParamFile, Logger_dir)
 addpath(genpath('/Users/elie/Documents/CODE/LMC'))
 TranscExtract = 1;
+ForceExtract = 0;
 % Get the recording data
 [AudioDataPath, DataFile ,~]=fileparts(Path2ParamFile);
 Date = DataFile(6:11);
@@ -44,7 +45,7 @@ ColorCode = get(groot,'DefaultAxesColorOrder');
 ReTriggerVocId = find(~isnan(Events{EventsRewardCol}));
 ReVocId = find(~(isnan(Events{EventsRewardCol}) + isinf(Events{EventsRewardCol})));
 
-figure(1)
+figure(100)
 plot(Events{EventsTimeCol}(VocId)/60,1:length(VocId), 'k-', 'Linewidth',2)
 hold on
 plot(Events{EventsTimeCol}(ReTriggerVocId)/60, 1:length(ReTriggerVocId), '-','Color',ColorCode(1,:),'Linewidth',2)
@@ -305,6 +306,15 @@ end
 
 %% Extracting sound events
 if TranscExtract
+    % extract logger data if not already done
+    All_loggers_dir = dir(fullfile(Logger_dir, '*ogger*'));
+    for ll=1:length(All_loggers_dir)
+        Logger_local = fullfile(Logger_dir,All_loggers_dir(ll).name);
+        EvFiles = dir(fullfile(Logger_local,'*EVENTS*mat'));
+        if isempty(EvFiles) || ForceExtract
+            extract_logger_data(Logger_local)
+        end
+    end
     % Alligning TTL pulses between soundmexpro and Deuteron
     align_soundmexAudio_2_logger(AudioDataPath, Logger_dir, ExpStartTime,'TTL_pulse_generator','Avisoft','Method','RiseFall');
     voc_localize_operant(DataSnipStruc(1).folder, DataPath, DataFile(6:11), DataFile(13:16))
