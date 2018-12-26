@@ -1,12 +1,18 @@
 function result_operant_bat(Path2ParamFile, Logger_dir)
 addpath(genpath('/Users/elie/Documents/CODE/LMC'))
-TranscExtract = 0;
+TranscExtract = 1;
 % Get the recording data
 [AudioDataPath, DataFile ,~]=fileparts(Path2ParamFile);
+Date = DataFile(6:11);
 WavFileStruc = dir(fullfile(AudioDataPath, [DataFile(1:16) '*mic*.wav']));
 
 % Get the sound snippets from the sounds that triggered detection
 DataSnipStruc = dir(fullfile(AudioDataPath, [DataFile(1:16) '*snippets/*.wav']));
+
+if TranscExtract && nargin<2
+% Set the path to logger data
+    Logger_dir = fullfile(AudioDataPath(1:(strfind(AudioDataPath, 'audio')-1)), 'logger',Date);
+end
 
 % Get the sample stamp of the detected vocalizations
 fprintf(1,'*** Getting events for that day ***\n');
@@ -54,34 +60,11 @@ hold off
 %% This section is getting ready a plot around the time of one given detected vocalization
 % first get the length of all files recorded to localize extract within the
 % files
+Subj= DataFile(1:4);
+Time = DataFile(13:16);
+Length_Y = get_raw_file_length(AudioDataPath, Subj, Date, Time);
 
-Length_Filename = fullfile(AudioDataPath, sprintf('%s_Length_Y.m',DataFile(1:16)));
-if ~exist(Length_Filename, 'file')
-    fprintf(1,'Calculating length of each sound file to allign extract...\n')
-    Nfiles = length(WavFileStruc);
-    Length_Y = nan(Nfiles,1);
-    for yy=1:Nfiles
-        fprintf(1,'File %d/%d\n', yy,Nfiles)
-        % get the files in the correct order
-        Wavefile=dir(fullfile(WavFileStruc(yy).folder, sprintf('%s*_%d.wav',WavFileStruc(yy).name(1:(end-7)),yy)));
-        Wavefile_local = fullfile(WavFileStruc(yy).folder, Wavefile.name);
-        [Y,FS] = audioread(Wavefile_local);
-        Length_Y(yy) = length(Y);
-    end
-    save(Length_Filename,'Length_Y')
-else
-    load(Length_Filename, 'Length_Y');
-end
-
-
-            
-% List of all the detected calls
-% Chose a vocalization to center the vizualization tool
-
-
-
-
-% % Calculate the offset of each soundfile output from the begining of the
+            % % Calculate the offset of each soundfile output from the begining of the
 % % task in number of samples. Offset_Y is the position of the first sample
 % % of each file in the continuous recording (because we are dropping some
 % % samples at each file change)
@@ -162,16 +145,20 @@ end
 %     save(Length_Filename,'Offset_Y', 'Length_Y')
 % end
 
-%% Plot the results
-fprintf(1,'Now plot the results around a given call\n')
+% Plot the results
+% List of all the detected calls
+% Chose a vocalization to center the vizualization tool
+fprintf(1,'Now plot the results around a given call\n') 
+if ~exist('FS', 'var')
+    [~,FS] = audioread(fullfile(WavFileStruc(1).folder, WavFileStruc(1).name));
+end
+Buffer = 60*FS;% We choose to have one minute of recording before and after sound detection onset
 IndCenterVoc=1;
 while ~isempty(IndCenterVoc)
     FullStamps = Events{EventsStampCol}(VocId);
-    if ~exist('FS', 'var')
-        [~,FS] = audioread(fullfile(WavFileStruc(1).folder, WavFileStruc(1).name));
-    end
+    
     SoundtimeMinSec = cell(length(FullStamps),1);
-    fprintf(1,'The following vocalizations where automatically detected by voc operant\n, Chose the index of the vocalization you want to look at:\n')
+    fprintf(1,'The following vocalizations where automatically detected by voc operant.\n Chose the index of the vocalization you want to look at:\n')
     for ss=1:length(FullStamps)
         Ind_ = strfind(FullStamps{ss}, '_');
         Stamp = str2double(FullStamps{ss}((Ind_+1):end));
@@ -180,7 +167,7 @@ while ~isempty(IndCenterVoc)
         end
         MinStamp = floor(Stamp/(60*FS));
         SecStamp = (Stamp - (MinStamp*60*FS))/FS;
-        SoundtimeMinSec{ss} = sprintf('%d %dmin %.1fs', ss, MinStamp, SecStamp);
+        SoundtimeMinSec{ss} = sprintf('%dmin %.1fs', MinStamp, SecStamp);
         fprintf(1, '%d. %s\n', ss,SoundtimeMinSec{ss})
     end
     IndCenterVoc = input('Index of your choice (leave empty to quit):\n');
@@ -204,10 +191,10 @@ while ~isempty(IndCenterVoc)
         fprintf(1,'Warning: the audiofile %s cannot be read properly and will not be plotted\n', Wavefile_local);
         Y = 0;
     end
-    Y_section_beg = max(1,Stamp - sum(Length_Y(1:(Seq-1))) - 60*FS); % Make sure we don't request before the beginning of the section
-    Pre_stamp = min(60*FS, Stamp - sum(Length_Y(1:(Seq-1))));
-    Y_section_end = min(length(Y), Stamp - sum(Length_Y(1:(Seq-1))) + 60*FS); % Make sure we don't request after the beginning of the section
-    Post_stamp = min(60*FS, length(Y)- (Stamp - sum(Length_Y(1:(Seq-1)))));
+    Y_section_beg = max(1,Stamp - sum(Length_Y(1:(Seq-1))) - Buffer); % Make sure we don't request before the beginning of the raw wave file
+    Pre_stamp = min(Buffer, Stamp - sum(Length_Y(1:(Seq-1)))); % Length of the sound section before sound detection onset
+    Y_section_end = min(length(Y), Stamp - sum(Length_Y(1:(Seq-1))) + Buffer); % Make sure we don't request after the end of the aw wave file
+    Post_stamp = min(Buffer, length(Y)- (Stamp - sum(Length_Y(1:(Seq-1)))));% Length of the sound section after sound detection onset
     Y_section = Y(Y_section_beg:Y_section_end);
     
     % Plot the waveforms of the recording around the stamp of the vocalization
@@ -218,19 +205,20 @@ while ~isempty(IndCenterVoc)
     
     % plot the sound snippets in red on top
     % Get the sound snippets from the sounds that triggered detection
-    DataSnipStruc = dir(fullfile(AudioDataPath, sprintf('%s*snippets/*snipfile_%d*.wav', DataFile(1:16), Seq)));
-    
-    SnipDur = nan(length(VocId),1);
-    Stamp_all = nan(length(VocId),1);
-    VocId_all = nan(length(VocId),1);
+    DataSnipStruc = dir(fullfile(AudioDataPath, sprintf('%s*snippets/*snipfile_%d_*.wav', DataFile(1:16), Seq)));
+    NbSnip_local = length(DataSnipStruc);
+    SnipDur = nan(NbSnip_local,1);
+    Stamp_all = nan(NbSnip_local,1);
+    VocId_all = nan(NbSnip_local,1);
     Voc_event_nb = 0;
-    for ss=1:length(DataSnipStruc)
+    for ss=1:NbSnip_local
         IndStamp1 = strfind(DataSnipStruc(ss).name, '_');
         IndStamp_last = IndStamp1(end);
-        if str2double(DataSnipStruc(ss).name((IndStamp_last+1) : (end-4))) < (Stamp + Post_stamp)
+        Stamp_local = str2double(DataSnipStruc(ss).name((IndStamp_last+1):end-4));
+        
+        if (Stamp_local < (Stamp + Post_stamp)) && (Stamp_local > (Stamp - Pre_stamp))
             [Ysnip,FS] = audioread(fullfile(DataSnipStruc(ss).folder, DataSnipStruc(ss).name));
-            Stamp_local = str2double(DataSnipStruc(ss).name((IndStamp_last+1):end-3));
-            Stamp_local_context = Stamp_local - Stamp + Pre_stamp;
+            Stamp_local_context = Stamp_local - (Stamp - Pre_stamp);
             Sequence = str2double(DataSnipStruc(ss).name(IndStamp1(end-1)+1));
             Voc_event_nb = Voc_event_nb + 1;
             figure(2)
@@ -255,6 +243,7 @@ while ~isempty(IndCenterVoc)
     end
     
     % plot the time stamp when sound was detected (last time point of each sound snippet)
+    % color code the point given the reward status
     % Get the VocId should be plotted, from the log
     VocId_log = nan(1,length(VocId));
     Stamp_all_log = nan(1,length(VocId));
@@ -265,7 +254,7 @@ while ~isempty(IndCenterVoc)
         IndStamp = strfind(FullStamp, '_');
         Seq_local = str2double(FullStamp(1:(IndStamp-1)));
         Stamp_local = str2double(FullStamp((IndStamp+1):end));
-        if Seq_local == Seq && (Stamp_local >= (Stamp-Pre_stamp)) && (Stamp_local <= (Stamp+Post_stamp)) % This is a vocalization from the same section
+        if (Seq_local == Seq) && (Stamp_local >= (Stamp-Pre_stamp)) && (Stamp_local <= (Stamp+Post_stamp)) % This is a vocalization from the same section
             Voc_event_nb_log = Voc_event_nb_log+1;
             VocId_log(Voc_event_nb_log) = VocId(ii);
             Stamp_all_log(Voc_event_nb_log) = Stamp_local;
@@ -294,9 +283,9 @@ while ~isempty(IndCenterVoc)
     ColorBack(find(isnan(ReBack)),:) = repmat([1 0 0], sum(isnan(ReBack)),1);
     figure(2)
     hold on
-    sc=scatter(Stamp_all_log+SnipDur_log-1, 1.2*ones(length(VocId_log),1), 10, ColorFront, 'filled');
+    sc=scatter(Stamp_all_log+SnipDur_log-1 - (Stamp - Pre_stamp), 1.2*ones(length(VocId_log),1), 10, ColorFront, 'filled');
     hold on
-    sc=scatter(Stamp_all_log+SnipDur_log-1, 1.6*ones(length(VocId_log),1), 10, ColorBack, 'filled');
+    sc=scatter(Stamp_all_log+SnipDur_log-1 - (Stamp - Pre_stamp), 1.6*ones(length(VocId_log),1), 10, ColorBack, 'filled');
     
     XaxisRes=20;
     LengthY = length(Y_section);
@@ -317,10 +306,10 @@ end
 %% Extracting sound events
 if TranscExtract
     % Alligning TTL pulses between soundmexpro and Deuteron
-    align_soundmexAudio_2_logger(Audio_dir, Logger_dir, DataFile(1:16),'TTL_pulse_generator','Avisoft','Method','RiseFall')
-    voc_localize(DataSnipStruc(1).folder, DataPath, DataFile(6:11), DataFile(13:16))
+    align_soundmexAudio_2_logger(AudioDataPath, Logger_dir, ExpStartTime,'TTL_pulse_generator','Avisoft','Method','RiseFall');
+    voc_localize_operant(DataSnipStruc(1).folder, DataPath, DataFile(6:11), DataFile(13:16))
 else
-    voc_localize(DataSnipStruc(1).folder, DataPath, DataFile(6:11), DataFile(13:16),'TransceiverTime',0)
+    voc_localize_operant(DataSnipStruc(1).folder, DataPath, DataFile(6:11), DataFile(13:16),'TransceiverTime',0)
 end
 % Get the list of sound triggers
 FullStamps = Events{EventsStampCol}(VocId);
