@@ -63,8 +63,11 @@ hold off
 % files
 Subj= DataFile(1:4);
 Time = DataFile(13:16);
-Length_Y = get_raw_file_length(AudioDataPath, Subj, Date, Time);
-
+[Length_Y, Sample_on_Y] = get_raw_file_length(AudioDataPath, Subj, Date, Time);
+figure(30)
+plot([1 ;cumsum(Length_Y(1:end-1))]-Sample_on_Y)
+xlabel('file #')
+ylabel('delay in recording samples')
             % % Calculate the offset of each soundfile output from the begining of the
 % % task in number of samples. Offset_Y is the position of the first sample
 % % of each file in the continuous recording (because we are dropping some
@@ -153,7 +156,7 @@ fprintf(1,'Now plot the results around a given call\n')
 if ~exist('FS', 'var')
     [~,FS] = audioread(fullfile(WavFileStruc(1).folder, WavFileStruc(1).name));
 end
-Buffer = 60*FS;% We choose to have one minute of recording before and after sound detection onset
+Buffer = 1*FS;% We choose to have one second of recording before and after sound detection onset
 IndCenterVoc=1;
 while ~isempty(IndCenterVoc)
     FullStamps = Events{EventsStampCol}(VocId);
@@ -192,10 +195,10 @@ while ~isempty(IndCenterVoc)
         fprintf(1,'Warning: the audiofile %s cannot be read properly and will not be plotted\n', Wavefile_local);
         Y = 0;
     end
-    Y_section_beg = max(1,Stamp - sum(Length_Y(1:(Seq-1))) - Buffer); % Make sure we don't request before the beginning of the raw wave file
-    Pre_stamp = min(Buffer, Stamp - sum(Length_Y(1:(Seq-1)))); % Length of the sound section before sound detection onset
-    Y_section_end = min(length(Y), Stamp - sum(Length_Y(1:(Seq-1))) + Buffer); % Make sure we don't request after the end of the aw wave file
-    Post_stamp = min(Buffer, length(Y)- (Stamp - sum(Length_Y(1:(Seq-1)))));% Length of the sound section after sound detection onset
+    Y_section_beg = max(1,Stamp - Sample_on_Y(Seq) - Buffer+1); % Make sure we don't request before the beginning of the raw wave file
+    Pre_stamp = min(Buffer, Stamp - Sample_on_Y(Seq)+1); % Length of the sound section before sound detection onset
+    Y_section_end = min(length(Y), Stamp - Sample_on_Y(Seq) +1 + Buffer); % Make sure we don't request after the end of the aw wave file
+    Post_stamp = min(Buffer, length(Y)- (Stamp - Sample_on_Y(Seq)+1));% Length of the sound section after sound detection onset
     Y_section = Y(Y_section_beg:Y_section_end);
     
     % Plot the waveforms of the recording around the stamp of the vocalization
@@ -220,11 +223,23 @@ while ~isempty(IndCenterVoc)
         if (Stamp_local < (Stamp + Post_stamp)) && (Stamp_local > (Stamp - Pre_stamp))
             [Ysnip,FS] = audioread(fullfile(DataSnipStruc(ss).folder, DataSnipStruc(ss).name));
             Stamp_local_context = Stamp_local - (Stamp - Pre_stamp);
-            Sequence = str2double(DataSnipStruc(ss).name(IndStamp1(end-1)+1));
+            % There are often lay-off between the sample value and the
+            % actual position within the recording, estimating that lay-off
+            % using cross correlation
+            DiffY = length(Y_section)-length(Ysnip);
+            XcorrY=nan(1,DiffY);
+            for cc=1:DiffY
+                XcorrY(cc) = corr(Y_section(cc+(1:length(Ysnip))-1),Ysnip);
+            end
+            [~,Stamp_local_context2] = max(abs(XcorrY));
+            Stamp_local_context2=Stamp_local_context2-1;
+            Sequence = str2double(DataSnipStruc(ss).name((IndStamp1(end-1)+1):(IndStamp1(end)-1)));
             Voc_event_nb = Voc_event_nb + 1;
             figure(2)
             hold on
             plot(Stamp_local_context:(Stamp_local_context+length(Ysnip)-1), Ysnip, 'Color', 'r')
+            hold on
+            plot(Stamp_local_context2:(Stamp_local_context2+length(Ysnip)-1), Ysnip, 'Color', 'g')
             % Search for the corresponding datapoint in the event log
             Index =[];
             for ii=1:length(VocId)
