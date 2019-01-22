@@ -1,4 +1,4 @@
-function result_operant_bat(Path2ParamFile, Logger_dir)
+function result_operant_bat(Path2ParamFile, Path2RecordingTable, Logger_dir)
 addpath(genpath('/Users/elie/Documents/CODE/LMC'))
 TranscExtract = 1;
 ForceExtract = 0;
@@ -11,6 +11,9 @@ WavFileStruc = dir(fullfile(AudioDataPath, [DataFile(1:16) '*mic*.wav']));
 DataSnipStruc = dir(fullfile(AudioDataPath, [DataFile(1:16) '*snippets/*.wav']));
 
 if TranscExtract && nargin<2
+    Path2RecordingTable = '/Users/elie/Google Drive/BatmanData/RecordingLogs/recording_logs.xlsx';
+end
+if TranscExtract && nargin<3
 % Set the path to logger data
     Logger_dir = fullfile(AudioDataPath(1:(strfind(AudioDataPath, 'audio')-1)), 'logger',Date);
 end
@@ -222,17 +225,16 @@ while ~isempty(IndCenterVoc)
         
         if (Stamp_local < (Stamp + Post_stamp)) && (Stamp_local > (Stamp - Pre_stamp))
             [Ysnip,FS] = audioread(fullfile(DataSnipStruc(ss).folder, DataSnipStruc(ss).name));
-            Stamp_local_context = Stamp_local - (Stamp - Pre_stamp);
+            Stamp_local_context = Stamp_local - (Stamp - Pre_stamp)+1;% This is where the first sample of the sound Ysnip should be in Y_section
             % There are often lay-off between the sample value and the
             % actual position within the recording, estimating that lay-off
             % using cross correlation
             DiffY = length(Y_section)-length(Ysnip);
-            XcorrY=nan(1,DiffY);
-            for cc=1:DiffY
-                XcorrY(cc) = corr(Y_section(cc+(1:length(Ysnip))-1),Ysnip);
+            XcorrY=nan(1,DiffY+1);
+            for cc=0:DiffY
+                XcorrY(cc+1) = transpose(Y_section(cc+(1:length(Ysnip)))) * Ysnip;
             end
             [~,Stamp_local_context2] = max(abs(XcorrY));
-            Stamp_local_context2=Stamp_local_context2-1;
             Sequence = str2double(DataSnipStruc(ss).name((IndStamp1(end-1)+1):(IndStamp1(end)-1)));
             Voc_event_nb = Voc_event_nb + 1;
             figure(2)
@@ -321,13 +323,25 @@ end
 
 %% Extracting sound events
 if TranscExtract
+    % Find the ID of the recorded bats
+    
+    [~,~,RecTableData]=xlsread(Path2RecordingTable,1,'A1:O200','basic');
+    RowData = find((cell2mat(RecTableData(2:end,1))== str2double(Date))) +1;
+    DataInfo = RecTableData(RowData,:);
+    Header = RecTableData(1,:);
+    BatIDCol = find(contains(Header, 'Bat'));
+    
     % extract logger data if not already done
     All_loggers_dir = dir(fullfile(Logger_dir, '*ogger*'));
     for ll=1:length(All_loggers_dir)
         Logger_local = fullfile(Logger_dir,All_loggers_dir(ll).name);
+        Ind = strfind(All_loggers_dir(ll).name, 'r');
+        Logger_num = str2double(All_loggers_dir(ll).name((Ind+1):end));
+        LogCol = find(cell2mat(DataInfo)==Logger_num);
+        BatID = DataInfo{BatIDCol(find(BatIDCol<LogCol,1))};
         EvFiles = dir(fullfile(Logger_local,'*EVENTS*mat'));
         if isempty(EvFiles) || ForceExtract
-            extract_logger_data(Logger_local)
+            extract_logger_data(Logger_local, 'BatID', num2str(BatID))
         end
     end
     % Alligning TTL pulses between soundmexpro and Deuteron

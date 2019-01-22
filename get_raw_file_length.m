@@ -35,14 +35,14 @@ if ~exist(Length_Filename, 'file') || Force
             % actual position within the recording, estimating that lay-off
             % using cross correlation
             DiffY = length(Y_section)-length(Ysnip);
-            XcorrY=nan(1,DiffY);
-            for cc=1:DiffY
-                XcorrY(cc) = corr(Y_section(cc-1+(1:length(Ysnip))),Ysnip);
+            XcorrY=nan(1,DiffY+1);
+            for cc=0:DiffY
+                XcorrY(cc+1) = transpose(Y_section(cc+(1:length(Ysnip)))) * Ysnip;
             end
             [~,Lag] = max(abs(XcorrY));
             % This is the delay between the first sample 
             Lay_off = Lag-1-Buffer;
-            Sample_on_Y(yy) = sum(Length_Y(1:(yy-1))) + Lay_off;
+            Sample_on_Y(yy) = sum(Length_Y(1:(yy-1))) + Lay_off +1;
         else
             Sample_on_Y(yy) = Sample_on_Y(yy-1) + Length_Y(yy-1);
         end
