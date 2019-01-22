@@ -1,5 +1,6 @@
 function result_operant_bat(Path2ParamFile, Path2RecordingTable, Logger_dir)
 addpath(genpath('/Users/elie/Documents/CODE/LMC'))
+addpath(genpath('/Users/elie/Documents/CODE/LoggerDataProcessing'))
 TranscExtract = 1;
 ForceExtract = 0;
 % Get the recording data
@@ -15,7 +16,7 @@ if TranscExtract && nargin<2
 end
 if TranscExtract && nargin<3
 % Set the path to logger data
-    Logger_dir = fullfile(AudioDataPath(1:(strfind(AudioDataPath, 'audio')-1)), 'logger',Date);
+    Logger_dir = fullfile(AudioDataPath(1:(strfind(AudioDataPath, 'audio')-1)), 'logger',['20' Date]);
 end
 
 % Get the sample stamp of the detected vocalizations
@@ -66,11 +67,8 @@ hold off
 % files
 Subj= DataFile(1:4);
 Time = DataFile(13:16);
-[Length_Y, Sample_on_Y] = get_raw_file_length(AudioDataPath, Subj, Date, Time);
-figure(30)
-plot([1 ;cumsum(Length_Y(1:end-1))]-Sample_on_Y)
-xlabel('file #')
-ylabel('delay in recording samples')
+[Length_Y] = get_raw_file_length(AudioDataPath, Subj, Date, Time);
+
             % % Calculate the offset of each soundfile output from the begining of the
 % % task in number of samples. Offset_Y is the position of the first sample
 % % of each file in the continuous recording (because we are dropping some
@@ -198,10 +196,10 @@ while ~isempty(IndCenterVoc)
         fprintf(1,'Warning: the audiofile %s cannot be read properly and will not be plotted\n', Wavefile_local);
         Y = 0;
     end
-    Y_section_beg = max(1,Stamp - Sample_on_Y(Seq) - Buffer+1); % Make sure we don't request before the beginning of the raw wave file
-    Pre_stamp = min(Buffer, Stamp - Sample_on_Y(Seq)+1); % Length of the sound section before sound detection onset
-    Y_section_end = min(length(Y), Stamp - Sample_on_Y(Seq) +1 + Buffer); % Make sure we don't request after the end of the aw wave file
-    Post_stamp = min(Buffer, length(Y)- (Stamp - Sample_on_Y(Seq)+1));% Length of the sound section after sound detection onset
+    Y_section_beg = max(1,Stamp - sum(Length_Y(1:(Seq-1))) - Buffer); % Make sure we don't request before the beginning of the raw wave file
+    Pre_stamp = min(Buffer, Stamp - sum(Length_Y(1:(Seq-1)))); % Length of the sound section before sound detection onset
+    Y_section_end = min(length(Y), Stamp - sum(Length_Y(1:(Seq-1))) + Buffer); % Make sure we don't request after the end of the aw wave file
+    Post_stamp = min(Buffer, length(Y)- (Stamp - sum(Length_Y(1:(Seq-1)))));% Length of the sound section after sound detection onset
     Y_section = Y(Y_section_beg:Y_section_end);
     
     % Plot the waveforms of the recording around the stamp of the vocalization
@@ -225,7 +223,7 @@ while ~isempty(IndCenterVoc)
         
         if (Stamp_local < (Stamp + Post_stamp)) && (Stamp_local > (Stamp - Pre_stamp))
             [Ysnip,FS] = audioread(fullfile(DataSnipStruc(ss).folder, DataSnipStruc(ss).name));
-            Stamp_local_context = Stamp_local - (Stamp - Pre_stamp)+1;% This is where the first sample of the sound Ysnip should be in Y_section
+%             Stamp_local_context = Stamp_local - (Stamp - Pre_stamp)+1;% This is where the first sample of the sound Ysnip should be in Y_section
             % There are often lay-off between the sample value and the
             % actual position within the recording, estimating that lay-off
             % using cross correlation
@@ -234,14 +232,12 @@ while ~isempty(IndCenterVoc)
             for cc=0:DiffY
                 XcorrY(cc+1) = transpose(Y_section(cc+(1:length(Ysnip)))) * Ysnip;
             end
-            [~,Stamp_local_context2] = max(abs(XcorrY));
+            [~,Stamp_local_context] = max(abs(XcorrY));
             Sequence = str2double(DataSnipStruc(ss).name((IndStamp1(end-1)+1):(IndStamp1(end)-1)));
             Voc_event_nb = Voc_event_nb + 1;
             figure(2)
             hold on
-            plot(Stamp_local_context:(Stamp_local_context+length(Ysnip)-1), Ysnip, 'Color', 'r')
-            hold on
-            plot(Stamp_local_context2:(Stamp_local_context2+length(Ysnip)-1), Ysnip, 'Color', 'g')
+            plot(Stamp_local_context:(Stamp_local_context+length(Ysnip)-1), Ysnip, 'Color', 'g--')
             % Search for the corresponding datapoint in the event log
             Index =[];
             for ii=1:length(VocId)
@@ -322,6 +318,10 @@ end
 
 
 %% Extracting sound events
+% The samplestamp given by sound mex is not really reliable, so for each
+% sound snippet, you want to find its exact location in the continuous
+% recording files, then using TTL pulses, retrieve the time it correspond
+% to in Deuteron, if requested.
 if TranscExtract
     % Find the ID of the recorded bats
     
