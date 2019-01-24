@@ -66,7 +66,7 @@ if ~exist(Length_Filename, 'file') || Force
     end
     save(Length_Filename,'Length_Y')
 else
-    fprintf('This file already exists, loading the values from\n%s\nSet Force =1 to overwrite previous calculations\n', Length_Filename);
+    fprintf('Files length have already been calculated, loading the values from\n%s\nSet Force =1 to overwrite previous calculations\n', Length_Filename);
     load(Length_Filename, 'Length_Y');
 end
 end

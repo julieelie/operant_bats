@@ -3,6 +3,8 @@ addpath(genpath('/Users/elie/Documents/CODE/LMC'))
 addpath(genpath('/Users/elie/Documents/CODE/LoggerDataProcessing'))
 TranscExtract = 1;
 ForceExtract = 0;
+ForceAllign = 0;
+PlotIndivFile = 0;
 % Get the recording data
 [AudioDataPath, DataFile ,~]=fileparts(Path2ParamFile);
 Date = DataFile(6:11);
@@ -49,7 +51,7 @@ ColorCode = get(groot,'DefaultAxesColorOrder');
 ReTriggerVocId = find(~isnan(Events{EventsRewardCol}));
 ReVocId = find(~(isnan(Events{EventsRewardCol}) + isinf(Events{EventsRewardCol})));
 
-figure(100)
+F=figure(100);
 plot(Events{EventsTimeCol}(VocId)/60,1:length(VocId), 'k-', 'Linewidth',2)
 hold on
 plot(Events{EventsTimeCol}(ReTriggerVocId)/60, 1:length(ReTriggerVocId), '-','Color',ColorCode(1,:),'Linewidth',2)
@@ -61,6 +63,8 @@ ylabel('Cumulative sum of events')
 hold off
 title(sprintf('Subjects: %s  Date: %s  Time: %s', DataFile(1:4), DataFile(6:11), DataFile(13:16)))
 hold off
+saveas(F,fullfile(AudioDataPath,sprintf('%s_CumTrigger.fig', DataFile(1:16))))
+saveas(F,fullfile(AudioDataPath,sprintf('%s_CumTrigger.jpeg', DataFile(1:16))))
 
 %% This section is getting ready a plot around the time of one given detected vocalization
 % first get the length of all files recorded to localize extract within the
@@ -153,6 +157,7 @@ Time = DataFile(13:16);
 % Plot the results
 % List of all the detected calls
 % Chose a vocalization to center the vizualization tool
+if PlotIndivFile
 fprintf(1,'Now plot the results around a given call\n') 
 if ~exist('FS', 'var')
     [~,FS] = audioread(fullfile(WavFileStruc(1).folder, WavFileStruc(1).name));
@@ -315,14 +320,16 @@ while ~isempty(IndCenterVoc)
     ylabel('Sound pressure')
 end
 
-
+end
 
 %% Extracting sound events
 % The samplestamp given by sound mex is not really reliable, so for each
 % sound snippet, you want to find its exact location in the continuous
 % recording files, then using TTL pulses, retrieve the time it correspond
 % to in Deuteron, if requested.
+
 if TranscExtract
+    fprintf(1,'*** Extract Logger data if not already done ***\n');
     % Find the ID of the recorded bats
     
     [~,~,RecTableData]=xlsread(Path2RecordingTable,1,'A1:O200','basic');
@@ -338,15 +345,23 @@ if TranscExtract
         Ind = strfind(All_loggers_dir(ll).name, 'r');
         Logger_num = str2double(All_loggers_dir(ll).name((Ind+1):end));
         LogCol = find(cell2mat(DataInfo)==Logger_num);
-        BatID = DataInfo{BatIDCol(find(BatIDCol<LogCol,1))};
-        EvFiles = dir(fullfile(Logger_local,'*EVENTS*mat'));
-        if isempty(EvFiles) || ForceExtract
+        BatID = DataInfo{BatIDCol(find(BatIDCol<LogCol,1,'last'))};
+        ParamFiles = dir(fullfile(Logger_local,'extracted_data','*extract_logger_data_parameters*mat'));
+        if isempty(ParamFiles) || ForceExtract
+            fprintf(1,'-> Extracting %s\n',All_loggers_dir(ll).name);
             extract_logger_data(Logger_local, 'BatID', num2str(BatID))
         end
     end
     % Alligning TTL pulses between soundmexpro and Deuteron
-    align_soundmexAudio_2_logger(AudioDataPath, Logger_dir, ExpStartTime,'TTL_pulse_generator','Avisoft','Method','RiseFall', 'Session_strings', {'all voc reward start', 'all voc reward stop'});
-    voc_localize_operant(DataSnipStruc(1).folder, DataPath, DataFile(6:11), DataFile(13:16))
+    % for the Operant session
+    ExpStartTime = DataFile(13:16);
+    TTL_dir = dir(fullfile(AudioDataPath,sprintf( '%s_%s_TTLPulseTimes.mat', Date, ExpStartTime)));
+    if isempty(TTL_dir) || ForceAllign
+        fprintf(1,'*** Alligning TTL pulses for the operant session ***\n');
+        align_soundmexAudio_2_logger(AudioDataPath, Logger_dir, ExpStartTime,'TTL_pulse_generator','Avisoft','Method','risefall', 'Session_strings', {'all voc reward start', 'all voc reward stop'});
+    end
+    fprintf(1,'*** Localizing and extracting vocalization that triggered the sound detection ***\n');
+    voc_localize_operant(AudioDataPath, DataFile(1:4),Date, ExpStartTime, 'UseSnip',0)
 else
     voc_localize_operant(DataSnipStruc(1).folder, DataPath, DataFile(6:11), DataFile(13:16),'TransceiverTime',0)
 end
