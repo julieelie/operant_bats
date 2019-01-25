@@ -357,9 +357,10 @@ if TranscExtract
             fprintf(1,'-> Extracting %s\n',All_loggers_dir(ll).name);
             
             % Bring data back on the computer
-            fprintf(1,'Transferring data from the server %s\n on the local computer %s\n', Logger_i, WorkDir);
-            mkdir(WorkDir)
-            [s,m,e]=copyfile(Logger_i, WorkDir, 'f');
+            Logger_local = fullfile(WorkDir, All_loggers_dir(ll).name);
+            fprintf(1,'Transferring data from the server %s\n on the local computer %s\n', Logger_i, Logger_local);
+            mkdir(Logger_local)
+            [s,m,e]=copyfile(Logger_i, Logger_local, 'f');
             if ~s
                 m %#ok<NOPRT>
                 e %#ok<NOPRT>
@@ -367,17 +368,17 @@ if TranscExtract
             end
             
             % run extraction
-            extract_logger_data(WorkDir, 'BatID', num2str(BatID))
+            extract_logger_data(Logger_local, 'BatID', num2str(BatID))
             
             % Bring back data on the server
-            fprintf(1,'Transferring data from the local computer %s\n back on the server %s\n', Logger_i, WorkDir);
+            fprintf(1,'Transferring data from the local computer %s\n back on the server %s\n', Logger_i, Logger_local);
             Remote_dir = fullfile(Logger_i, 'extracted_data');
             mkdir(Remote_dir)
-            [s,m,e]=copyfile(fullfile(WorkDir, 'extracted_data'), Remote_dir, 'f');
+            [s,m,e]=copyfile(fullfile(Logger_local, 'extracted_data'), Remote_dir, 'f');
             if ~s
                 TicTransfer = tic;
                 while toc(TicTransfer)<30*60
-                    [s,m,e]=copyfile(fullfile(WorkDir, 'extracted_data'), Remote_dir, 'f');
+                    [s,m,e]=copyfile(fullfile(Logger_local, 'extracted_data'), Remote_dir, 'f');
                     if s
                         return
                     end
