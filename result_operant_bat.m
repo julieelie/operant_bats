@@ -427,13 +427,44 @@ if TranscExtract
 else
     voc_localize_operant(AudioDataPath, DataFile(1:4),Date, ExpStartTime, 'UseSnip',0,'TransceiverTime',0)
 end
-% Get the list of sound triggers
-FullStamps = Events{EventsStampCol}(VocId);
-NSoundE = length(FullStamps);
-SeqStamps = nan(NSoundE,1);
-IndStamps = nan(NSoundE,1);
-for ss=1:NSoundE
-    Ind_ = strfind(FullStamps{ss}, '_');
-    IndStamps(ss) = str2double(FullStamps{ss}((Ind_+1):end));
-    SeqStamps(ss) = str2double(FullStamps{ss}(1:(Ind_-1)));
+
+%% Identify the same vocalizations on the piezos and save sound extracts, onset and offset times
+
+fprintf(' LOCALIZING VOCALIZATIONS ON PIEZO RECORDINGS\n')
+    fprintf('*********** %s *************\n', Days{dd})
+    Audio_dir = fullfile(Server_audio_path, Days{dd});
+    Loggers_dir = fullfile(Server_logger_path, Days{dd});
+    % find the time stamp of each experiment
+    StampFiles = dir(fullfile(Audio_dir, '*RecOnly_param.txt'));
+    if length(StampFiles)>1
+        fprintf('Several Recording Only tests were done on that day, please choose the one you want to look at:\n')
+        for ff=1:length(StampFiles)
+            fprintf('%d: %s\n',ff, StampFiles(ff).name);
+        end
+        Indff = input('Your choice:\n');
+    else
+        Indff = 1;
+    end
+    ExpStartTime = StampFiles(Indff).name(13:16);
+    get_logger_data_voc(Audio_dir, Loggers_dir,Days{dd}(3:end), ExpStartTime);
+    
+%% Identify who is calling
+for dd=1:length(Days)
+    fprintf(' IDENTIFY WHO IS CALLING\n')
+    fprintf('*********** %s *************\n', Days{dd})
+    Audio_dir = fullfile(Server_audio_path, Days{dd});
+    Loggers_dir = fullfile(Server_logger_path, Days{dd});
+    % find the time stamp of each experiment
+    StampFiles = dir(fullfile(Audio_dir, '*RecOnly_param.txt'));
+    if length(StampFiles)>1
+        fprintf('Several Recording Only tests were done on that day, please choose the one you want to look at:\n')
+        for ff=1:length(StampFiles)
+            fprintf('%d: %s\n',ff, StampFiles(ff).name);
+        end
+        Indff = input('Your choice:\n');
+    else
+        Indff = 1;
+    end
+    ExpStartTime = StampFiles(Indff).name(13:16);
+    who_calls(Loggers_dir,Days{dd}(3:end), ExpStartTime,200,0);
 end
