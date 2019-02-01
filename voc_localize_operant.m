@@ -1,4 +1,4 @@
-function [Voc_out, Voc_samp_idx,Voc_transc_times] = voc_localize_operant(RawWav_dir, Subj, Date, ExpStartTime, varargin)
+function [Voc_out, Voc_samp_idx,Voc_transc_time] = voc_localize_operant(RawWav_dir, Subj, Date, ExpStartTime, varargin)
 %% VOC_LOCALIZE_OPERANT a function to retrieve the position of detected vocalizations by vocOperant in continuous recordings
 % Inputs
 % Voc_dir is the folder containing the vocalization extracts to identify
@@ -59,13 +59,13 @@ FullStamps = Events{EventsStampCol}(VocId);
 % initialize variables
 NVoc = length(VocId);
 if strcmp(SaveMode, 'mat')
-    Voc_waves = cell(NVoc,1);
+    Voc_wave = cell(NVoc,1);
 elseif strcmp(SaveMode, 'wav')
-    Voc_filenames = cell(NVoc,1);
+    Voc_filename = cell(NVoc,1);
 end
 Voc_samp_idx = nan(NVoc,2);
 Voc_true_stamp = nan(NVoc,1);
-Voc_transc_times = nan(NVoc,2);
+Voc_transc_time = nan(NVoc,2);
 
 % Get ready a folder for the cut vocalizations
 mkdir(RawWav_dir, 'Detected_calls')
@@ -203,10 +203,10 @@ for ss=1:NVoc
 
         % Saving the deliniated vocalization
         if strcmp(SaveMode,'mat')
-            Voc_waves{ss} = Y_section(OnsetSamp_Ysection:OffsetSamp_Ysection);
+            Voc_wave{ss} = Y_section(OnsetSamp_Ysection:OffsetSamp_Ysection);
         elseif strcmp(SaveMode,'wav')
-            Voc_filenames{ss} = fullfile(RawWav_dir, 'Detected_calls',sprintf('%s_%s_%s_voc_%d_%d.wav',Subj,Date,ExpStartTime, File_Idx, Stamp_or));
-            audiowrite(Voc_filenames{ss} , Y_section(OnsetSamp_Ysection:OffsetSamp_Ysection), FS)
+            Voc_filename{ss} = fullfile(RawWav_dir, 'Detected_calls',sprintf('%s_%s_%s_voc_%d_%d.wav',Subj,Date,ExpStartTime, File_Idx, Stamp_or));
+            audiowrite(Voc_filename{ss} , Y_section(OnsetSamp_Ysection:OffsetSamp_Ysection), FS)
         end
         
         
@@ -217,37 +217,37 @@ for ss=1:NVoc
             TTL_idx = find(unique(TTL.File_number) == File_Idx);
             if isempty(TTL_idx)
                 fprintf('Transceiver time calculations not possible for that vocalization\n')
-                Voc_transc_times(ss,:) = nan(1,2);
+                Voc_transc_time(ss,:) = nan(1,2);
             else
                 Voc_samp_idx_zs = (Voc_samp_idx(ss,:) - TTL.Mean_std_Pulse_samp_audio(TTL_idx,1))/TTL.Mean_std_Pulse_samp_audio(TTL_idx,2);
                 % calculate the transceiver times
-                Voc_transc_times(ss,:) = TTL.Mean_std_Pulse_TimeStamp_Transc(TTL_idx,2) .* polyval(TTL.Slope_and_intercept{TTL_idx},Voc_samp_idx_zs,[], TTL.Mean_std_x{TTL_idx}) + TTL.Mean_std_Pulse_TimeStamp_Transc(TTL_idx,1);
+                Voc_transc_time(ss,:) = TTL.Mean_std_Pulse_TimeStamp_Transc(TTL_idx,2) .* polyval(TTL.Slope_and_intercept{TTL_idx},Voc_samp_idx_zs,[], TTL.Mean_std_x{TTL_idx}) + TTL.Mean_std_Pulse_TimeStamp_Transc(TTL_idx,1);
             end
         end
     end
 end
 
 ExtractedSoundDetection = find(~isnan(Voc_samp_idx(:,1)));
-Voc_transc_times = Voc_transc_times(ExtractedSoundDetection,:);
+Voc_transc_time = Voc_transc_time(ExtractedSoundDetection,:);
 Voc_samp_idx = Voc_samp_idx(ExtractedSoundDetection,:);
 if strcmp(SaveMode, 'mat')
-    Voc_waves = Voc_waves(ExtractedSoundDetection);
-    Voc_out = Voc_waves;
+    Voc_wave = Voc_wave(ExtractedSoundDetection);
+    Voc_out = Voc_wave;
 elseif strcmp(SaveMode, 'wav')
-    Voc_filenames = Voc_filenames(ExtractedSoundDetection);
-    Voc_out = Voc_filenames;
+    Voc_filename = Voc_filename(ExtractedSoundDetection);
+    Voc_out = Voc_filename;
 end
  
 
 %% save the calculation results
 save(fullfile(RawWav_dir, sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)),'Voc_samp_idx', 'ExtractedSoundDetection', 'FullStamps')
 if TranscTime
-    save(fullfile(RawWav_dir, sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)), 'Voc_transc_times','-append')
+    save(fullfile(RawWav_dir, sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)), 'Voc_transc_time','-append')
 end
 if strcmp(SaveMode, 'mat')
-    save(fullfile(RawWav_dir, sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)), 'Voc_waves','-append')
+    save(fullfile(RawWav_dir, sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)), 'Voc_wave','-append')
 elseif strcmp(SaveMode,'wav')
-    save(fullfile(RawWav_dir, sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)), 'Voc_filenames','-append')
+    save(fullfile(RawWav_dir, sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)), 'Voc_filename','-append')
 end
 end
 

@@ -1,9 +1,11 @@
 function result_operant_bat(Path2ParamFile, Path2RecordingTable, Logger_dir)
 addpath(genpath('/Users/elie/Documents/CODE/LMC'))
 addpath(genpath('/Users/elie/Documents/CODE/LoggerDataProcessing'))
+addpath(genpath('/Users/elie/Documents/CODE/SoundAnalysisBats'))
 TranscExtract = 1; % set to 1 to extract logger data and transceiver time
 ForceExtract = 0; % set to 1 to redo the extraction of loggers otherwise the calculations will use the previous extraction data
-ForceAllign = 0; % In case the TTL pulses allignment was already doe but you want to do it again, set to 1
+ForceAllign = 0; % In case the TTL pulses allignment was already done but you want to do it again, set to 1
+ForceVocExt = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
 PlotIndivFile = 0; % Set to 1 to plot the sound pressure waveforms of individual detected vocalizations
 
 % Get the recording data
@@ -422,49 +424,28 @@ if TranscExtract
         fprintf(1,'*** Alligning TTL pulses for the operant session ***\n');
         align_soundmexAudio_2_logger(AudioDataPath, Logger_dir, ExpStartTime,'TTL_pulse_generator','Avisoft','Method','risefall', 'Session_strings', {'all voc reward start', 'all voc reward stop'});
     end
-    fprintf(1,'*** Localizing and extracting vocalization that triggered the sound detection ***\n');
-    voc_localize_operant(AudioDataPath, DataFile(1:4),Date, ExpStartTime, 'UseSnip',0)
-else
-    voc_localize_operant(AudioDataPath, DataFile(1:4),Date, ExpStartTime, 'UseSnip',0,'TransceiverTime',0)
+    VocExt_dir = dir(fullfile(AudioDataPath,sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)));
+    if isempty(VocExt_dir) || ForceVocExt
+        fprintf(1,'*** Localizing and extracting vocalizations that triggered the sound detection ***\n');
+        voc_localize_operant(AudioDataPath, DataFile(1:4),Date, ExpStartTime, 'UseSnip',0)
+    end
+elseif isempty(VocExt_dir) || ForceVocExt
+        fprintf(1,'*** Localizing and extracting vocalizations that triggered the sound detection ***\n');
+        fprintf(1,'NOTE: no transceiver time extraction\n')
+        voc_localize_operant(AudioDataPath, DataFile(1:4),Date, ExpStartTime, 'UseSnip',0,'TransceiverTime',0)
 end
 
 %% Identify the same vocalizations on the piezos and save sound extracts, onset and offset times
-
 fprintf(' LOCALIZING VOCALIZATIONS ON PIEZO RECORDINGS\n')
-    fprintf('*********** %s *************\n', Days{dd})
-    Audio_dir = fullfile(Server_audio_path, Days{dd});
-    Loggers_dir = fullfile(Server_logger_path, Days{dd});
-    % find the time stamp of each experiment
-    StampFiles = dir(fullfile(Audio_dir, '*RecOnly_param.txt'));
-    if length(StampFiles)>1
-        fprintf('Several Recording Only tests were done on that day, please choose the one you want to look at:\n')
-        for ff=1:length(StampFiles)
-            fprintf('%d: %s\n',ff, StampFiles(ff).name);
-        end
-        Indff = input('Your choice:\n');
-    else
-        Indff = 1;
-    end
-    ExpStartTime = StampFiles(Indff).name(13:16);
-    get_logger_data_voc(Audio_dir, Loggers_dir,Days{dd}(3:end), ExpStartTime);
+LogVoc_dir = dir(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData.mat', Date, ExpStartTime)));
+if isempty(LogVoc_dir) || ForceVocExt
+    get_logger_data_voc(AudioDataPath, Logger_dir,Date, ExpStartTime);
+else
+    fprintf(1,'Using already processed data\n')
+end
+
     
 %% Identify who is calling
-for dd=1:length(Days)
-    fprintf(' IDENTIFY WHO IS CALLING\n')
-    fprintf('*********** %s *************\n', Days{dd})
-    Audio_dir = fullfile(Server_audio_path, Days{dd});
-    Loggers_dir = fullfile(Server_logger_path, Days{dd});
-    % find the time stamp of each experiment
-    StampFiles = dir(fullfile(Audio_dir, '*RecOnly_param.txt'));
-    if length(StampFiles)>1
-        fprintf('Several Recording Only tests were done on that day, please choose the one you want to look at:\n')
-        for ff=1:length(StampFiles)
-            fprintf('%d: %s\n',ff, StampFiles(ff).name);
-        end
-        Indff = input('Your choice:\n');
-    else
-        Indff = 1;
-    end
-    ExpStartTime = StampFiles(Indff).name(13:16);
-    who_calls(Loggers_dir,Days{dd}(3:end), ExpStartTime,200,0);
+fprintf(' IDENTIFY WHO IS CALLING\n')
+who_calls(Logger_dir,Date, ExpStartTime,200,0);
 end
