@@ -340,7 +340,7 @@ end
 if TranscExtract
     fprintf(1,'*** Extract Logger data if not already done ***\n');
     % Find the ID of the recorded bats
-    [~,~,RecTableData]=xlsread(Path2RecordingTable,1,'A1:O200','basic');
+    [~,~,RecTableData]=xlsread(Path2RecordingTable,1,'A1:P200','basic');
     RowData = find((cell2mat(RecTableData(2:end,1))== str2double(Date))) +1;
     DataInfo = RecTableData(RowData,:);
     Header = RecTableData(1,:);
@@ -352,7 +352,12 @@ if TranscExtract
         Logger_i = fullfile(Logger_dir,All_loggers_dir(ll).name);
         Ind = strfind(All_loggers_dir(ll).name, 'r');
         Logger_num = str2double(All_loggers_dir(ll).name((Ind+1):end));
-        LogCol = find(cell2mat(DataInfo)==Logger_num);
+        NLogCol = find(contains(Header, 'NL'));% Columns of the neural loggers
+        ALogCol = find(contains(Header, 'AL'));% Columns of the audio loggers
+        LogCol = NLogCol(find(cell2mat(DataInfo(NLogCol))==Logger_num));
+        if isempty(LogCol) % This is an audiologger and not a neural logger
+            LogCol = ALogCol(find(cell2mat(DataInfo(ALogCol))==Logger_num));
+        end
         BatID = DataInfo{BatIDCol(find(BatIDCol<LogCol,1,'last'))};
         ParamFiles = dir(fullfile(Logger_i,'extracted_data','*extract_logger_data_parameters*mat'));
         if isempty(ParamFiles) || ForceExtract
@@ -370,7 +375,11 @@ if TranscExtract
             end
             
             % run extraction
-            extract_logger_data(Logger_local, 'BatID', num2str(BatID))
+            if Logger_num==16
+                extract_logger_data(Logger_local, 'BatID', num2str(BatID), 'ActiveChannels', [0 1 2 3 4 5 6 7 8 9 10 12 13 14 15], 'AutoSpikeThreshFactor',5)
+            else
+                extract_logger_data(Logger_local, 'BatID', num2str(BatID))
+            end
             
             % Bring back data on the server
             fprintf(1,'Transferring data from the local computer %s\n back on the server %s\n', Logger_i, Logger_local);
@@ -416,6 +425,16 @@ if TranscExtract
             end
         end
     end
+    
+    % Get the serial numbers of the audiologgers that the two implanted
+    % bats wear
+    NLCol = find(contains(Header, 'NL'));
+    ALThroatCol = find(contains(Header, 'AL-throat'));
+    SerialNumberAL = length(NLCol);
+    for dd=1:length(NLCol)
+     SerialNumberAL(dd) = DataInfo{ALThroatCol(find(ALThroatCol<NLCol(dd),1,'last'))};
+    end
+    
     % Alligning TTL pulses between soundmexpro and Deuteron
     % for the Operant session
     ExpStartTime = DataFile(13:16);
@@ -439,7 +458,7 @@ end
 fprintf(' LOCALIZING VOCALIZATIONS ON PIEZO RECORDINGS\n')
 LogVoc_dir = dir(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData.mat', Date, ExpStartTime)));
 if isempty(LogVoc_dir) || ForceVocExt
-    get_logger_data_voc(AudioDataPath, Logger_dir,Date, ExpStartTime);
+    get_logger_data_voc(AudioDataPath, Logger_dir,Date, ExpStartTime, 'SerialNumber',SerialNumberAL);
 else
     fprintf(1,'Using already processed data\n')
 end
