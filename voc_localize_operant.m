@@ -1,5 +1,19 @@
 function [Voc_out, Voc_samp_idx,Voc_transc_time] = voc_localize_operant(RawWav_dir, Subj, Date, ExpStartTime, varargin)
 %% VOC_LOCALIZE_OPERANT a function to retrieve the position of detected vocalizations by vocOperant in continuous recordings
+% First a section of the ambient microphone recording is taken around the time of sound detection given by vocOperant,
+% cuting maximum Buffer_s = 2s before the trigger and Buffer_s = 2s after
+% the trigger. Second the enveloppe of that sound section is calculated and
+% the vocalization is localized using an amplitude threshold set at 20%
+% (AmpThreshPerc) of the amplitude peak in the section. The begining of the
+% vocalization is written as being at most 0.2s (Buffer_cut) before the
+% amplitude reaches threshold and the end of the vocalization as being at
+% most 0.2s (Buffer_cut) after the last point reaching threshold in the
+% section. These onset and offset values are saved for each vocalization as
+% indices values in the corresponding continuous mic recording file
+% (Voc_samp_idx), and as time values relative to transciever clock (if
+% requested, Voc_transc_time). Each vocalization is then saved as a wavfile
+% or stored in a cell array (Voc_out)
+
 % Inputs
 % Voc_dir is the folder containing the vocalization extracts to identify
 
@@ -64,7 +78,7 @@ elseif strcmp(SaveMode, 'wav')
     Voc_filename = cell(NVoc,1);
 end
 Voc_samp_idx = nan(NVoc,2);
-Voc_true_stamp = nan(NVoc,1);
+% Voc_true_stamp = nan(NVoc,1);
 Voc_transc_time = nan(NVoc,2);
 
 % Get ready a folder for the cut vocalizations
@@ -84,7 +98,7 @@ FS = 192000;
 [z,p,k] = butter(6,[1000 90000]/(FS/2),'bandpass');
 sos_raw_band = zp2sos(z,p,k);
 
-% We choose to have 0.1s of recording before and after the vocalization
+% We choose to have Buffer_cut s of recording before and after the vocalization
 % onset/offset
 % to better isolate the vocalization
 Buffer_cut = 0.2;
@@ -133,43 +147,44 @@ for ss=1:NVoc
 
 
         % find the corresponding sound snippets (snip in
-        % the snip folder)
-        DataSnipStruc = dir(fullfile(RawWav_dir, sprintf('%s_%s_%s*snippets/*snipfile_%d_%d.wav', Subj, Date, ExpStartTime, File_Idx,Stamp_or)));
-        NbSnip_local = length(DataSnipStruc);
-        if NbSnip_local && UseSnip
-            if File_Idx==1
-                Hyp_sample_Before = 0;
-            else
-                Hyp_sample_Before = sum(Length_Y(1: (File_Idx-1)));
-            end
-            Y_section_beg = max(1,Stamp - Hyp_sample_Before - Buffer); % Make sure we don't request before the beginning of the raw wave file
-            Y_section_end = min(length(Y), Stamp - Hyp_sample_Before + Buffer); % Make sure we don't request after the end of the aw wave file
-            Y_section = Y(Y_section_beg:Y_section_end);
-            [Ysnip,~] = audioread(fullfile(DataSnipStruc(1).folder, DataSnipStruc(1).name));
-            % There are often lay-off between the sample value and the
-            % actual position within the recording, estimating that lay-off
-            % using cross correlation
-            DiffY = length(Y_section)-length(Ysnip);
-            XcorrY=nan(1,DiffY+1);
-            for cc=0:DiffY
-                XcorrY(cc+1) = transpose(Y_section(cc+(1:length(Ysnip)))) * Ysnip;
-            end
-            [MaxCorr,Lag] = max(abs(XcorrY));
-            % This is the delay between the first sample
-            Lay_off = Lag-1-Buffer;
-            Voc_true_stamp(ss) = Stamp + Lay_off;
-            figure(20)
-            cla
-            plot(Y_section,'k')
-            hold on
-            plot(Buffer+Lay_off+(1:length(Ysnip)), Ysnip, 'r--')
-            hold off
-            title(sprintf('Lay-off = %d with corr = %.2f for detected sound %d/%d',Lay_off,MaxCorr,ss,length(FullStamps)))
-            pause(1)
-        else
-            Voc_true_stamp(ss) = Stamp;
-            fprintf('No snippets of sound saved or snippet verifictaion not requested, the vocalization cutting will be done without a better approximation of the sound localization\n')
-        end
+        % the snip folder) and perform a cross-correlation to exactly
+        % retrieve the position of the sound
+%         DataSnipStruc = dir(fullfile(RawWav_dir, sprintf('%s_%s_%s*snippets/*snipfile_%d_%d.wav', Subj, Date, ExpStartTime, File_Idx,Stamp_or)));
+%         NbSnip_local = length(DataSnipStruc);
+%         if NbSnip_local && UseSnip
+%             if File_Idx==1
+%                 Hyp_sample_Before = 0;
+%             else
+%                 Hyp_sample_Before = sum(Length_Y(1: (File_Idx-1)));
+%             end
+%             Y_section_beg = max(1,Stamp - Hyp_sample_Before - Buffer); % Make sure we don't request before the beginning of the raw wave file
+%             Y_section_end = min(length(Y), Stamp - Hyp_sample_Before + Buffer); % Make sure we don't request after the end of the aw wave file
+%             Y_section = Y(Y_section_beg:Y_section_end);
+%             [Ysnip,~] = audioread(fullfile(DataSnipStruc(1).folder, DataSnipStruc(1).name));
+%             % There are often lay-off between the sample value and the
+%             % actual position within the recording, estimating that lay-off
+%             % using cross correlation
+%             DiffY = length(Y_section)-length(Ysnip);
+%             XcorrY=nan(1,DiffY+1);
+%             for cc=0:DiffY
+%                 XcorrY(cc+1) = transpose(Y_section(cc+(1:length(Ysnip)))) * Ysnip;
+%             end
+%             [MaxCorr,Lag] = max(abs(XcorrY));
+%             % This is the delay between the first sample
+%             Lay_off = Lag-1-Buffer;
+%             Voc_true_stamp(ss) = Stamp + Lay_off;
+%             figure(20)
+%             cla
+%             plot(Y_section,'k')
+%             hold on
+%             plot(Buffer+Lay_off+(1:length(Ysnip)), Ysnip, 'r--')
+%             hold off
+%             title(sprintf('Lay-off = %d with corr = %.2f for detected sound %d/%d',Lay_off,MaxCorr,ss,length(FullStamps)))
+%             pause(1)
+%         else
+%             Voc_true_stamp(ss) = Stamp;
+%             fprintf('No snippets of sound saved or snippet verifictaion not requested, the vocalization cutting will be done without a better approximation of the sound localization\n')
+%         end
 
         % calculate the envelpe of that extract and cut it Buffer_cut before/after points when the
         % enveloppe gets lower than AmpThreshPerc of the max
