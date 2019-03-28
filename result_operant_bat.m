@@ -3,7 +3,7 @@ addpath(genpath('/Users/elie/Documents/CODE/LMC'))
 addpath(genpath('/Users/elie/Documents/CODE/LoggerDataProcessing'))
 addpath(genpath('/Users/elie/Documents/CODE/SoundAnalysisBats'))
 TranscExtract = 1; % set to 1 to extract logger data and transceiver time
-ForceExtract = 0; % set to 1 to redo the extraction of loggers otherwise the calculations will use the previous extraction data
+ForceExtract = 1; % set to 1 to redo the extraction of loggers otherwise the calculations will use the previous extraction data
 ForceAllign = 0; % In case the TTL pulses allignment was already done but you want to do it again, set to 1
 ForceVocExt = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
 PlotIndivFile = 0; % Set to 1 to plot the sound pressure waveforms of individual detected vocalizations
@@ -353,6 +353,7 @@ if TranscExtract
     
     % extract logger data if not already done
     All_loggers_dir = dir(fullfile(Logger_dir, '*ogger*'));
+    TransceiverReset = struct(); % These are possible parameters for dealing with change of transceiver or sudden transceiver clock change. Set to empty before the first extraction
     for ll=1:length(All_loggers_dir)
         Logger_i = fullfile(Logger_dir,All_loggers_dir(ll).name);
         Ind = strfind(All_loggers_dir(ll).name, 'r');
@@ -382,9 +383,16 @@ if TranscExtract
             % run extraction
             if Logger_num==16
 %                 extract_logger_data(Logger_local, 'BatID', num2str(BatID), 'ActiveChannels', [0 1 2 3 4 5 6 7 8 9 10 12 13 14 15], 'AutoSpikeThreshFactor',5)
-                extract_logger_data(Logger_local, 'BatID', num2str(BatID), 'ActiveChannels', [0 1 2 3 4 5 6 7 8 9 10 12 13 14 15])
+                extract_logger_data(Logger_local, 'BatID', num2str(BatID), 'ActiveChannels', [0 1 2 3 4 5 6 7 8 9 10 12 13 14 15],'TransceiverReset',TransceiverReset)
             else
-                extract_logger_data(Logger_local, 'BatID', num2str(BatID))
+                extract_logger_data(Logger_local, 'BatID', num2str(BatID),'TransceiverReset',TransceiverReset)
+            end
+            
+            % Keeps value of eventual clock reset
+            Filename=fullfile(Logger_local, 'extracted_data', sprintf('%s_20%s_EVENTS.mat', num2str(BatID),Date));
+            NewTR = load(Filename, 'TransceiverReset');
+            if ~isempty(fieldnames(NewTR.TransceiverReset))% this will be used in the next loop!
+                TransceiverReset = NewTR.TransceiverReset;
             end
             
             % Bring back data on the server
