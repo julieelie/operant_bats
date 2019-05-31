@@ -102,9 +102,9 @@ sos_raw_band = zp2sos(z,p,k);
 % onset/offset
 % to better isolate the vocalization
 Buffer_cut = 0.2;
-Fhigh_power =20; % Frequency upper bound for calculating the envelope (time running RMS)
+Fhigh_power =50; % Frequency upper bound for calculating the envelope (time running RMS)
 Fs_env = 50; % Sample freqency of the enveloppe Hz
-AmpThreshPerc = 20/100; % Thershold of amplitude used to cut the extract around the vocalization (10% max)
+AmpThreshPerc = 10/100; % Threshold of amplitude used to cut the extract around the vocalization (10% max)
 
 %% Loop through time stamps of detected vocalizations
 for ss=1:NVoc
