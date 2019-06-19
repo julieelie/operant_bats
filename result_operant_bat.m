@@ -5,10 +5,10 @@ addpath(genpath('/Users/elie/Documents/CODE/SoundAnalysisBats'))
 TranscExtract = 1; % set to 1 to extract logger data and transceiver time
 ForceExtract = 0; % set to 1 to redo the extraction of loggers otherwise the calculations will use the previous extraction data
 ForceAllign = 0; % In case the TTL pulses allignment was already done but you want to do it again, set to 1
-ForceVocExt = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
+ForceVocExt = 1; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
 ForceWhoID = 0; % In case the identification of bats was already done but you want to re-do it again
 PlotIndivFile = 0; % Set to 1 to plot the sound pressure waveforms of individual detected vocalizations
-
+close all
 % Get the recording data
 [AudioDataPath, DataFile ,~]=fileparts(Path2ParamFile);
 Date = DataFile(6:11);
@@ -385,11 +385,12 @@ if TranscExtract
             end
             
             % run extraction
-            if Logger_num==16
+            if Logger_num==16 && str2double(Date)<190501
                 %                 extract_logger_data(Logger_local, 'BatID', num2str(BatID), 'ActiveChannels', [0 1 2 3 4 5 6 7 8 9 10 12 13 14 15], 'AutoSpikeThreshFactor',5,'TransceiverReset',TransceiverReset)
                 extract_logger_data(Logger_local, 'BatID', num2str(BatID), 'ActiveChannels', [0 1 2 3 4 5 6 7 8 9 10 12 13 14 15],'TransceiverReset',TransceiverReset)
             else
-                extract_logger_data(Logger_local, 'BatID', num2str(BatID),'TransceiverReset',TransceiverReset)
+                %extract_logger_data(Logger_local, 'BatID', num2str(BatID),'TransceiverReset',TransceiverReset)
+                extract_logger_data(Logger_local, 'BatID', num2str(BatID),'TransceiverReset',TransceiverReset,'AutoSpikeThreshFactor',4)
             end
             
             % Keeps value of eventual clock reset
