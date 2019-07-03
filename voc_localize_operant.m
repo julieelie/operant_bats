@@ -105,8 +105,9 @@ Buffer_cut = 0.2;
 Fhigh_power =50; % Frequency upper bound for calculating the envelope (time running RMS)
 Fs_env = 50; % Sample freqency of the enveloppe Hz
 AmpThreshPerc = 10/100; % Threshold of amplitude used to cut the extract around the vocalization (10% max)
-WavFileStruc = dir(fullfile(RawWav_dir, sprintf('%s_%s_%s*mic*.wav',Subj, Date, ExpStartTime)));
-MeanAmpFile = nan(length(WavFileStruc),1); %Threshold on amplitude used to localize peaks of amplitude
+Ind_ = strfind(FullStamps{end}, '_');
+LastFile_Idx = str2double(FullStamps{end}(1:(Ind_-1)));
+MeanAmpFile = nan(LastFile_Idx,1); %Threshold on amplitude used to localize peaks of amplitude
 
 %% Loop through time stamps of detected vocalizations
 for ss=1:NVoc

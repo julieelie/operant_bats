@@ -6,7 +6,7 @@ TranscExtract = 1; % set to 1 to extract logger data and transceiver time
 ForceExtract = 0; % set to 1 to redo the extraction of loggers otherwise the calculations will use the previous extraction data
 ForceAllign = 0; % In case the TTL pulses allignment was already done but you want to do it again, set to 1
 ForceVocExt = 1; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
-ForceWhoID = 0; % In case the identification of bats was already done but you want to re-do it again
+ForceWhoID = 1; % In case the identification of bats was already done but you want to re-do it again
 PlotIndivFile = 0; % Set to 1 to plot the sound pressure waveforms of individual detected vocalizations
 close all
 % Get the recording data
