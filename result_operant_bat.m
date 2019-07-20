@@ -5,7 +5,8 @@ addpath(genpath('/Users/elie/Documents/CODE/SoundAnalysisBats'))
 TranscExtract = 1; % set to 1 to extract logger data and transceiver time
 ForceExtract = 0; % set to 1 to redo the extraction of loggers otherwise the calculations will use the previous extraction data
 ForceAllign = 0; % In case the TTL pulses allignment was already done but you want to do it again, set to 1
-ForceVocExt = 1; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
+ForceVocExt1 = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
+ForceVocExt2 = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
 ForceWhoID = 1; % In case the identification of bats was already done but you want to re-do it again
 PlotIndivFile = 0; % Set to 1 to plot the sound pressure waveforms of individual detected vocalizations
 close all
@@ -386,8 +387,8 @@ if TranscExtract
             
             % run extraction
             if Logger_num==16 && str2double(Date)<190501
-                %                 extract_logger_data(Logger_local, 'BatID', num2str(BatID), 'ActiveChannels', [0 1 2 3 4 5 6 7 8 9 10 12 13 14 15], 'AutoSpikeThreshFactor',5,'TransceiverReset',TransceiverReset)
-                extract_logger_data(Logger_local, 'BatID', num2str(BatID), 'ActiveChannels', [0 1 2 3 4 5 6 7 8 9 10 12 13 14 15],'TransceiverReset',TransceiverReset)
+                % extract_logger_data(Logger_local, 'BatID', num2str(BatID), 'ActiveChannels', [0 1 2 3 4 5 6 7 8 9 10 12 13 14 15], 'AutoSpikeThreshFactor',5,'TransceiverReset',TransceiverReset)
+                extract_logger_data(Logger_local, 'BatID', num2str(BatID), 'ActiveChannels', [0 1 2 3 4 5 6 7 8 9 10 12 13 14 15],'TransceiverReset',TransceiverReset,'AutoSpikeThreshFactor',4)
             else
                 %extract_logger_data(Logger_local, 'BatID', num2str(BatID),'TransceiverReset',TransceiverReset)
                 extract_logger_data(Logger_local, 'BatID', num2str(BatID),'TransceiverReset',TransceiverReset,'AutoSpikeThreshFactor',4)
@@ -469,7 +470,7 @@ if TranscExtract
     else
         fprintf(1,'*** ALREADY DONE: Alligning TTL pulses for the operant session ***\n');
     end
-    if isempty(VocExt_dir) || ForceVocExt
+    if isempty(VocExt_dir) || ForceVocExt1
         fprintf(1,'*** Localizing and extracting vocalizations that triggered the sound detection ***\n');
         voc_localize_operant(AudioDataPath, DataFile(1:4),Date, ExpStartTime, 'UseSnip',0)
     else
@@ -479,7 +480,7 @@ if TranscExtract
     %% Identify the same vocalizations on the piezos and save sound extracts, onset and offset times
     fprintf(' LOCALIZING VOCALIZATIONS ON PIEZO RECORDINGS\n')
     LogVoc_dir = dir(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData.mat', Date, ExpStartTime)));
-    if isempty(LogVoc_dir) || ForceVocExt
+    if isempty(LogVoc_dir) || ForceVocExt1 || ForceVocExt2
         get_logger_data_voc(AudioDataPath, Logger_dir,Date, ExpStartTime, 'SerialNumber',SerialNumberAL);
     else
         fprintf(1,'Using already processed data\n')
@@ -489,14 +490,14 @@ if TranscExtract
     %% Identify who is calling
     fprintf(' IDENTIFY WHO IS CALLING\n')
     WhoCall_dir = dir(fullfile(Logger_dir, sprintf('*%s_%s*whocalls*', Date, ExpStartTime)));
-    if isempty(WhoCall_dir) || ForceVocExt || ForceWhoID
+    if isempty(WhoCall_dir) || ForceVocExt1 || ForceWhoID || ForceVocExt2
         who_calls(Logger_dir,Date, ExpStartTime,200,1);
     else
         fprintf(1,'Using already processed data\n')
     end
     
     
-elseif isempty(VocExt_dir) || ForceVocExt
+elseif isempty(VocExt_dir) || ForceVocExt1
     fprintf(1,'*** Localizing and extracting vocalizations that triggered the sound detection ***\n');
     fprintf(1,'NOTE: no transceiver time extraction\n')
     voc_localize_operant(AudioDataPath, DataFile(1:4),Date, ExpStartTime, 'UseSnip',0,'TransceiverTime',0)
