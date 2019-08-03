@@ -102,9 +102,12 @@ sos_raw_band = zp2sos(z,p,k);
 % onset/offset
 % to better isolate the vocalization
 Buffer_cut = 0.2;
-Fhigh_power =20; % Frequency upper bound for calculating the envelope (time running RMS)
+Fhigh_power =50; % Frequency upper bound for calculating the envelope (time running RMS)
 Fs_env = 50; % Sample freqency of the enveloppe Hz
-AmpThreshPerc = 20/100; % Thershold of amplitude used to cut the extract around the vocalization (10% max)
+AmpThreshPerc = 10/100; % Threshold of amplitude used to cut the extract around the vocalization (10% max)
+Ind_ = strfind(FullStamps{end}, '_');
+LastFile_Idx = str2double(FullStamps{end}(1:(Ind_-1)));
+MeanAmpFile = nan(LastFile_Idx,1); %Threshold on amplitude used to localize peaks of amplitude
 
 %% Loop through time stamps of detected vocalizations
 for ss=1:NVoc
@@ -141,10 +144,18 @@ for ss=1:NVoc
             fprintf(1,'Data will not be retrieved\n')
             continue
         end
+        if isnan(MeanAmpFile(File_Idx)) % calculate the amplitude threshold for that file
+            fprintf(1,'Calculating the amplitude threshold for file %d  ',File_Idx)
+            Filt_RawVoc = filtfilt(sos_raw_band,1,Y(1:(FS*30)));
+            Amp_env_Mic = running_rms(Filt_RawVoc, FS, Fhigh_power, Fs_env);
+            MeanAmpFile(File_Idx) = mean(Amp_env_Mic);
+            fprintf('-> Done\n')
+        end
+            
         Y_section_beg = max(1,Stamp - sum(Length_Y(1:(File_Idx-1))) - Buffer); % Make sure we don't request before the beginning of the raw wave file
         Y_section_end = min(length(Y), Stamp - sum(Length_Y(1:(File_Idx-1))) + Buffer); % Make sure we don't request after the end of the aw wave file
         Y_section = Y(Y_section_beg:Y_section_end);
-
+        
 
         % find the corresponding sound snippets (snip in
         % the snip folder) and perform a cross-correlation to exactly
@@ -192,7 +203,13 @@ for ss=1:NVoc
 
         Filt_RawVoc = filtfilt(sos_raw_band,1,Y_section);
         Amp_env_Mic = running_rms(Filt_RawVoc, FS, Fhigh_power, Fs_env);
-        ThreshAmp = AmpThreshPerc*max(Amp_env_Mic);
+        InitialAmpFact = 50;
+        PKs=[];
+        while isempty(PKs) % try with a lower threshold
+            [PKs,Locs] = findpeaks(Amp_env_Mic,Fs_env, 'MinPeakHeight', InitialAmpFact*MeanAmpFile(File_Idx));% detect all the peaks in the amplitude envelope that are higher than twice the mean of the enveloppe
+            InitialAmpFact = InitialAmpFact/2;
+        end
+        ThreshAmp = min(AmpThreshPerc*PKs); % Use for the threshold calculation the lowest of the peaks, ensuring that soft vocalizations are detected even if they are close to loud ones
         OnsetSamp = find(Amp_env_Mic>ThreshAmp,1, 'first');
         OffsetSamp = find(Amp_env_Mic>ThreshAmp,1, 'last');
         OnsetSamp_Ysection = max(1,round(OnsetSamp/Fs_env*FS - Buffer_cut*FS));
@@ -214,7 +231,10 @@ for ss=1:NVoc
         legend('Sound', 'Envelope', 'Extract','Amplitude threshold')
         hold off
         title(sprintf('Tiggered vocalization %d/%d', ss, length(FullStamps)));
-        pause(1)
+%         Player= audioplayer(Y_section, FS);
+%         play(Player)
+%         pause(5)
+        
 
         % Saving the deliniated vocalization
         if strcmp(SaveMode,'mat')
