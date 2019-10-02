@@ -496,7 +496,7 @@ if TranscExtract
     fprintf(' IDENTIFY WHO IS CALLING\n')
     WhoCall_dir = dir(fullfile(Logger_dir, sprintf('*%s_%s*whocalls*', Date, ExpStartTime)));
     if isempty(WhoCall_dir) || ForceVocExt1 || ForceWhoID || ForceVocExt2
-        who_calls(Logger_dir,Date, ExpStartTime,200,1);
+        who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,200,1);
     else
         fprintf(1,'Using already processed data\n')
     end
