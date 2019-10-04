@@ -8,6 +8,7 @@ ForceAllign = 0; % In case the TTL pulses allignment was already done but you wa
 ForceVocExt1 = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
 ForceVocExt2 = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
 ForceWhoID = 0; % In case the identification of bats was already done but you want to re-do it again
+ForceWhat = 1; % In case running biosound was already done but you want to re-do it
 PlotIndivFile = 0; % Set to 1 to plot the sound pressure waveforms of individual detected vocalizations
 close all
 % Get the recording data
@@ -502,6 +503,15 @@ if TranscExtract
     end
     % Save the ID of the bat for each logger
     save(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData_%d.mat', Date, ExpStartTime, 200)), 'BatID','LoggerName','-append')
+
+     %% Explore what is said
+    fprintf('\n*** Identify what is said ***\n')
+    WhatCall_dir = dir(fullfile(Logger_dir, sprintf('*%s_%s*whatcalls*', Date, ExpStartTime)));
+    if isempty(WhatCall_dir) || ForceVocExt1 || ForceWhoID || ForceVocExt2 || ForceWhat
+        what_calls(Logger_dir,Date, ExpStartTime);
+    else
+        fprintf('\n*** ALREADY DONE: Identify what is said ***\n')
+    end
     
 elseif isempty(VocExt_dir) || ForceVocExt1
     fprintf(1,'*** Localizing and extracting vocalizations that triggered the sound detection ***\n');
