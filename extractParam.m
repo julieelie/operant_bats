@@ -1,3 +1,4 @@
+function [dataParam] = extractParam(filepath)
 fid = fopen(filepath);
 data = textscan(fid,'%s','Delimiter', '\t');
 fclose(fid);
