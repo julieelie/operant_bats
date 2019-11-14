@@ -27,11 +27,12 @@ if TranscExtract
     WorkDir = fullfile('C:\Users\Eva\Documents\', 'WorkingDirectory');
 end
 
+%% !!! CHANGE TO ADAPT TO TOBIAS DATA
 if TranscExtract && nargin<2
     % Set the path to logger data
     Logger_dir = fullfile(AudioDataPath(1:(strfind(AudioDataPath, 'bataudio')-1)), 'piezo',Date,'audiologgers');
-    TTLFolder = fullfile(AudioDataPath(1:(strfind(AudioDataPath, 'bataudio')-1)), 'TTLWavParamFiles');
 end
+%% !!!
 
 
 
@@ -176,7 +177,6 @@ if TranscExtract
             fprintf(1,'Transferring data from the local computer %s\n back on the server %s\n', Logger_i, Logger_local);
             Remote_dir = fullfile(Logger_i, 'extracted_data');
             mkdir(Remote_dir)
-            [s,m,e]=copyfile(EventLogCSV, [Remote_dir filesep], 'f');
             [s,m,e]=copyfile(fullfile(Logger_local, 'extracted_data'), Remote_dir, 'f');
             if ~s
                 TicTransfer = tic;
@@ -229,7 +229,7 @@ if TranscExtract
     TTL_dir = dir(fullfile(AudioDataPath,sprintf( '%s_%s_TTLPulseTimes.mat', Date, ExpStartTime)));
     if isempty(TTL_dir) || ForceAllign
         fprintf(1,'*** Alligning TTL pulses for the operant session ***\n');
-        align_soundmexAudio_2_logger(AudioDataPath, Logger_dir, ExpStartTime,'Method','risefall', 'Session_strings', {'start', 'stop'}, 'Logger_list', Logger_num, 'TTLFolder', TTLFolder);
+        align_soundmexAudio_2_logger(AudioDataPath, Logger_dir, ExpStartTime,'Method','risefall', 'Session_strings', {'all voc reward start', 'all voc reward stop'}, 'Logger_list', Logger_num);
     else
         fprintf(1,'*** ALREADY DONE: Alligning TTL pulses for the operant session ***\n');
     end
