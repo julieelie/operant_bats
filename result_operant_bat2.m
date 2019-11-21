@@ -11,6 +11,7 @@ FileBatList = fullfile(OutputDataPath,'BatList.txt');
 addpath(genpath(fullfile(PathToGithubFolder,'operant_bats')))
 addpath(genpath(fullfile(PathToGithubFolder,'LoggerDataProcessing')))
 addpath(genpath(fullfile(PathToGithubFolder,'SoundAnalysisBats')))
+addpath(genpath(fullfile(PathToGithubFolder,'LMC')))
 TranscExtract = 1; % set to 1 to extract logger data and transceiver time
 ForceExtract = 0; % set to 1 to redo the extraction of loggers otherwise the calculations will use the previous extraction data
 ForceAllign = 0; % In case the TTL pulses allignment was already done but you want to do it again, set to 1
@@ -122,25 +123,20 @@ if TranscExtract
         Ind = strfind(All_loggers_dir(ll).name, 'r');
         Logger_num = str2double(All_loggers_dir(ll).name((Ind+1):end));
         LoggerName{ll} = ['AL' num2str(Logger_num)];
-        
-        %% !!! CHANGE TO ADAPT TO TOBIAS DATA: determine the ID of the bat wearing the collar
-        
-        % Looking if only front bat wore a collar, if only back bat wore a
+         % Looking if only front bat wore a collar, if only back bat wore a
         % collar, then if both wore a collar then compare date ranges
         if strcmp(Data{3}{find(contains(Data{1},dataParam.batFront(1:2)))},'Y') == 1 && strcmp(Data{3}{find(contains(Data{1},dataParam.batBack(1:2)))},'N') == 1
             BATID = dataParam.batFront;
         elseif strcmp(Data{3}{find(contains(Data{1},dataParam.batFront(1:2)))},'N') == 1 && strcmp(Data{3}{find(contains(Data{1},dataParam.batBack(1:2)))},'Y') == 1
             BATID = dataParam.batBack;
         elseif strcmp(Data{3}{find(contains(Data{1},dataParam.batFront(1:2)))},'Y') == 1 && strcmp(Data{3}{find(contains(Data{1},dataParam.batBack(1:2)))},'Y') == 1
-            if str2num(Data{4}{find(contains(Data{1},dataParam.batFront(1:2)))}) <= str2num(Date) & str2num(Data{5}{find(contains(Data{1},dataParam.batFront(1:2)))}) >= str2num(Date)
+            if str2num(Data{4}{find(contains(Data{1},dataParam.batFront(1:2)))}) <= str2num(Date) && str2num(Data{5}{find(contains(Data{1},dataParam.batFront(1:2)))}) >= str2num(Date)
                 BATID = dataParam.batFront;
             else
                 BATID = dataParam.batBack;
             end
         end
-        
         BatID{ll} = BATID;
-        %% !!
         
         ParamFiles = dir(fullfile(Logger_i,'extracted_data','*extract_logger_data_parameters*mat'));
         if isempty(ParamFiles) || ForceExtract
@@ -229,7 +225,7 @@ if TranscExtract
     TTL_dir = dir(fullfile(AudioDataPath,sprintf( '%s_%s_TTLPulseTimes.mat', Date, ExpStartTime)));
     if isempty(TTL_dir) || ForceAllign
         fprintf(1,'*** Alligning TTL pulses for the operant session ***\n');
-        align_soundmexAudio_2_logger(AudioDataPath, Logger_dir, ExpStartTime,'Method','risefall', 'Session_strings', {'start', 'stop'}, 'Logger_list', Logger_num, 'TTLFolder', TTLFolder);
+        align_soundmexAudio_2_logger(AudioDataPath, Logger_dir, ExpStartTime,'Method','risefall', 'Session_strings', {'Free text. start', 'Free text. stop'}, 'Logger_list', Logger_num, 'TTLFolder', TTLFolder);
     else
         fprintf(1,'*** ALREADY DONE: Alligning TTL pulses for the operant session ***\n');
     end
@@ -241,10 +237,10 @@ if TranscExtract
     end
     
     %% Identify the same vocalizations on the piezos and save sound extracts, onset and offset times
-    fprintf(' LOCALIZING VOCALIZATIONS ON PIEZO RECORDINGS\n')
+    fprintf('*** LOCALIZING VOCALIZATIONS ON PIEZO RECORDINGS ***\n')
     LogVoc_dir = dir(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData.mat', Date, ExpStartTime)));
     if isempty(LogVoc_dir) || ForceVocExt1 || ForceVocExt2
-        get_logger_data_voc(AudioDataPath, Logger_dir,Date, ExpStartTime, 'SerialNumber',Logger_num);
+        get_logger_data_voc(AudioDataPath, Logger_dir,Date, ExpStartTime, 'SerialNumber',Logger_num,'ReAllignment',0);
     else
         fprintf(1,'Using already processed data\n')
         
