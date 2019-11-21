@@ -177,8 +177,8 @@ for ss=1:NVoc
             MeanStdAmpRawFile(File_Idx,2) = std(Amp_env_Mic);
             fprintf('-> Done\n')
         end
-        MeanStdAmpRawExtract(vv,1)= MeanStdAmpRawFile(File_Idx,1);
-        MeanStdAmpRawExtract(vv,2)= MeanStdAmpRawFile(File_Idx,2);
+        MeanStdAmpRawExtract(ss,1)= MeanStdAmpRawFile(File_Idx,1);
+        MeanStdAmpRawExtract(ss,2)= MeanStdAmpRawFile(File_Idx,2);
         
         
         
