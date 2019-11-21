@@ -153,7 +153,7 @@ for ss=1:NVoc
             continue
         end
         
-        if isnan(MeanStdAmpRawFile(FileIdx,1)) % calculate the amplitude threshold for that file
+        if isnan(MeanStdAmpRawFile(File_Idx,1)) % calculate the amplitude threshold for that file
             % Calculate the amplitude threshold as the average amplitude on the
             % first 30 seconds of that 10 min recording file from which that file
             % come from
