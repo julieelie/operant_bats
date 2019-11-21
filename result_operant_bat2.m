@@ -2,6 +2,7 @@ function result_operant_bat2(Path2ParamFile, Logger_dir)
 %% !!! CHANGE TO ADAPT TO COMPUTER
 OutputDataPath = 'Z:\users\tobias\vocOperant\Results';
 PathToGithubFolder = 'C:\Users\Eva\Documents\GitHub';
+Path2LocalDocuments = 'C:\Users\Eva\Documents';
 EventFileExe = 'C:\Users\Eva\Documents\MATLAB\EventFileReader_6_2\Event_File_Reader_6_2.exe';
 % Set the path to a working directory on the computer so logger data are
 % transfered there and directly accessible for calculations
@@ -24,8 +25,14 @@ close all
 [AudioDataPath, DataFile ,~]=fileparts(Path2ParamFile);
 Date = DataFile(6:11);
 
+% Starting a diary
+Now=clock;
+Diary_filename = fullfile(OutputDataPath, sprintf('%s_Diary%s_%d%d%d.txt', DataFile(1:end-6),date,Now(4),Now(5),round(Now(6))));
+diary(Diary_filename)
+diary on
+
 if TranscExtract
-    WorkDir = fullfile('C:\Users\Eva\Documents\', 'WorkingDirectory');
+    WorkDir = fullfile(Path2LocalDocuments, 'WorkingDirectory');
 end
 
 if TranscExtract && nargin<2
@@ -101,14 +108,15 @@ ExpStartTime = DataFile(13:16);
 VocExt_dir = dir(fullfile(AudioDataPath,sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)));
 
 % Then run the logger extraction, allignment, and vocalization extraction
-if TranscExtract
+% Find all the logger directories
+All_loggers_dir = dir(fullfile(Logger_dir, '*ogger*'));
+if isempty(All_loggers_dir)
+    fprintf(1,'NO LOGGER DATA can be found in %s -> Only extracting microphone data', Logger_dir)
+end
+if TranscExtract && ~isempty(All_loggers_dir)
     fprintf(1,'*** Extract Logger data if not already done ***\n');
     
-    % Find all the logger directories
-    All_loggers_dir = dir(fullfile(Logger_dir, '*ogger*'));
-    if isempty(All_loggers_dir)
-        error('NO DATA can be found in %s', Logger_dir)
-    end
+    
     DirFlags = [All_loggers_dir.isdir];
     % Extract only those that are directories.
     All_loggers_dir = All_loggers_dir(DirFlags);
@@ -276,7 +284,7 @@ else
 end
 
 
-
+diary off
 
 
 end
