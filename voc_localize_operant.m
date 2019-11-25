@@ -304,6 +304,7 @@ elseif strcmp(SaveMode, 'wav')
     Voc_filename = Voc_filename(ExtractedSoundDetection);
     Voc_out = Voc_filename;
 end
+MeanStdAmpRawExtract(ExtractedSoundDetection,:)= MeanStdAmpRawExtract(ExtractedSoundDetection,:);
  
 
 %% save the calculation results

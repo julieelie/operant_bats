@@ -16,9 +16,9 @@ addpath(genpath(fullfile(PathToGithubFolder,'LMC')))
 TranscExtract = 1; % set to 1 to extract logger data and transceiver time
 ForceExtract = 0; % set to 1 to redo the extraction of loggers otherwise the calculations will use the previous extraction data
 ForceAllign = 0; % In case the TTL pulses allignment was already done but you want to do it again, set to 1
-ForceVocExt1 = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
+ForceVocExt1 = 1; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
 ForceVocExt2 = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
-ForceWhoID = 0; % In case the identification of bats was already done but you want to re-do it again
+ForceWhoID = 1; % In case the identification of bats was already done but you want to re-do it again
 % ForceWhat = 1; % In case running biosound was already done but you want to re-do it
 close all
 % Get the recording data
@@ -255,11 +255,11 @@ if TranscExtract && ~isempty(All_loggers_dir)
     end
     
     %% Identify who is calling
-    Delay2MergeCalls = 10;% in ms
+    Delay2MergeCalls = 100;% in ms
     fprintf(' IDENTIFY WHO IS CALLING\n')
     WhoCall_dir = dir(fullfile(Logger_dir, sprintf('*%s_%s*whocalls*', Date, ExpStartTime)));
     if isempty(WhoCall_dir) || ForceVocExt1 || ForceWhoID || ForceVocExt2
-        who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,Delay2MergeCalls,1,1,1);
+        who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,Delay2MergeCalls,1,0,1, 'Factor_RMS_Mic',2);
     else
         fprintf(1,'Using already processed data\n')
     end
