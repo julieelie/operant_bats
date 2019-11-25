@@ -47,6 +47,12 @@ TranscTime = 1; % Logical to indicate if transceiver time should be calculated f
 Dflts  = {TranscTime, 'wav',0};
 [TranscTime, SaveMode, UseSnip] = internal.stats.parseArgs(Pnames,Dflts,varargin{:});
 
+% Hard coded input for finding the microphone envelope noise threshold
+Dur_RMS = 0.5; % duration of the silence sample in min for the calculation of average running RMS
+Fhigh_power = 20; %Hz
+Fs_env = 1000; %Hz Sample frequency of the enveloppe
+MicThreshNoise = 15*10^-3;
+
 if TranscTime
     % Load the pulse times and samples
     TTL_dir = dir(fullfile(RawWav_dir,sprintf( '%s_%s_TTLPulseTimes.mat', Date, ExpStartTime)));
@@ -81,6 +87,7 @@ Voc_samp_idx = nan(NVoc,2);
 % Voc_true_stamp = nan(NVoc,1);
 Voc_transc_time = nan(NVoc,2);
 
+
 % Get ready a folder for the cut vocalizations
 mkdir(RawWav_dir, 'Detected_calls')
 
@@ -107,7 +114,8 @@ Fs_env = 50; % Sample freqency of the enveloppe Hz
 AmpThreshPerc = 10/100; % Threshold of amplitude used to cut the extract around the vocalization (10% max)
 Ind_ = strfind(FullStamps{end}, '_');
 LastFile_Idx = str2double(FullStamps{end}(1:(Ind_-1)));
-MeanAmpFile = nan(LastFile_Idx,1); %Threshold on amplitude used to localize peaks of amplitude
+MeanStdAmpRawFile = nan(LastFile_Idx,2);%Threshold on amplitude used to localize peaks of amplitude
+MeanStdAmpRawExtract = nan(NVoc,2);
 
 %% Loop through time stamps of detected vocalizations
 for ss=1:NVoc
@@ -144,13 +152,37 @@ for ss=1:NVoc
             fprintf(1,'Data will not be retrieved\n')
             continue
         end
-        if isnan(MeanAmpFile(File_Idx)) % calculate the amplitude threshold for that file
+        
+        if isnan(MeanStdAmpRawFile(File_Idx,1)) % calculate the amplitude threshold for that file
+            % Calculate the amplitude threshold as the average amplitude on the
+            % first 30 seconds of that 10 min recording file from which that file
+            % come from
+            % Get the average running rms in a Dur_RMS min extract in the middle of
+            % the recording
+            fprintf(1, 'Calculating average RMS values on a %.1f min sample of silence\n',Dur_RMS);
+            SampleDur = round(Dur_RMS*60*FS);
+            StartSamp = round(length(Y)/2);
             fprintf(1,'Calculating the amplitude threshold for file %d  ',File_Idx)
-            Filt_RawVoc = filtfilt(sos_raw_band,1,Y(1:(FS*30)));
-            Amp_env_Mic = running_rms(Filt_RawVoc, FS, Fhigh_power, Fs_env);
-            MeanAmpFile(File_Idx) = mean(Amp_env_Mic);
+            BadSection = 1;
+            while BadSection
+                Filt_RawVoc = filtfilt(sos_raw_band,1,Y(StartSamp + (1:round(SampleDur))));
+                Amp_env_Mic = running_rms(Filt_RawVoc, FS, Fhigh_power, Fs_env);
+                if any(Amp_env_Mic>MicThreshNoise) % there is most likely a vocalization in this sequence look somewhere else!
+                    StartSamp = StartSamp + SampleDur +1;
+                else
+                    BadSection = 0;
+                end
+            end
+            MeanStdAmpRawFile(File_Idx,1) = mean(Amp_env_Mic);
+            MeanStdAmpRawFile(File_Idx,2) = std(Amp_env_Mic);
             fprintf('-> Done\n')
         end
+        MeanStdAmpRawExtract(ss,1)= MeanStdAmpRawFile(File_Idx,1);
+        MeanStdAmpRawExtract(ss,2)= MeanStdAmpRawFile(File_Idx,2);
+        
+        
+        
+        
             
         Y_section_beg = max(1,Stamp - sum(Length_Y(1:(File_Idx-1))) - Buffer); % Make sure we don't request before the beginning of the raw wave file
         Y_section_end = min(length(Y), Stamp - sum(Length_Y(1:(File_Idx-1))) + Buffer); % Make sure we don't request after the end of the aw wave file
@@ -206,7 +238,7 @@ for ss=1:NVoc
         InitialAmpFact = 50;
         PKs=[];
         while isempty(PKs) % try with a lower threshold
-            [PKs,Locs] = findpeaks(Amp_env_Mic,Fs_env, 'MinPeakHeight', InitialAmpFact*MeanAmpFile(File_Idx));% detect all the peaks in the amplitude envelope that are higher than twice the mean of the enveloppe
+            [PKs,Locs] = findpeaks(Amp_env_Mic,Fs_env, 'MinPeakHeight', InitialAmpFact*MeanStdAmpRawFile(File_Idx,1));% detect all the peaks in the amplitude envelope that are higher than twice the mean of the enveloppe
             InitialAmpFact = InitialAmpFact/2;
         end
         ThreshAmp = min(AmpThreshPerc*PKs); % Use for the threshold calculation the lowest of the peaks, ensuring that soft vocalizations are detected even if they are close to loud ones
@@ -275,7 +307,7 @@ end
  
 
 %% save the calculation results
-save(fullfile(RawWav_dir, sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)),'Voc_samp_idx', 'ExtractedSoundDetection', 'FullStamps')
+save(fullfile(RawWav_dir, sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)),'Voc_samp_idx', 'ExtractedSoundDetection', 'FullStamps','MeanStdAmpRawFile','MeanStdAmpRawExtract')
 if TranscTime
     save(fullfile(RawWav_dir, sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)), 'Voc_transc_time','-append')
 end
