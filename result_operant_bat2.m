@@ -259,7 +259,7 @@ if TranscExtract && ~isempty(All_loggers_dir)
     fprintf(' IDENTIFY WHO IS CALLING\n')
     WhoCall_dir = dir(fullfile(Logger_dir, sprintf('*%s_%s*whocalls*', Date, ExpStartTime)));
     if isempty(WhoCall_dir) || ForceVocExt1 || ForceWhoID || ForceVocExt2
-        who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,Delay2MergeCalls,1,0,1, 'Factor_RMS_Mic',2);
+        who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,Delay2MergeCalls,1,0,1, 'Factor_RMS_Mic',3);
     else
         fprintf(1,'Using already processed data\n')
     end
