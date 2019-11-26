@@ -1,4 +1,4 @@
-function result_operant_bat2(Path2ParamFile, Logger_dir)
+function [LoggerDataYN]=result_operant_bat2(Path2ParamFile, Logger_dir)
 %% !!! CHANGE TO ADAPT TO COMPUTER
 OutputDataPath = 'Z:\users\tobias\vocOperant\Results';
 PathToGithubFolder = 'C:\Users\Eva\Documents\GitHub';
@@ -113,7 +113,8 @@ All_loggers_dir = dir(fullfile(Logger_dir, '*ogger*'));
 if isempty(All_loggers_dir)
     fprintf(1,'NO LOGGER DATA can be found in %s -> Only extracting microphone data', Logger_dir)
 end
-if TranscExtract && ~isempty(All_loggers_dir)
+LoggerDataYN = ~isempty(All_loggers_dir);
+if TranscExtract && LoggerDataYN
     fprintf(1,'*** Extract Logger data if not already done ***\n');
     
     
