@@ -6,12 +6,12 @@ BoxOfInterest = [3 4 6 8];
 ExpLog = fullfile(OutputDataPath, 'VocOperantLogWhoCalls.txt');
 Fid = fopen(ExpLog, 'a');
 if ~exist(ExpLog, 'file')
-    fprintf(Fid, 'Subject\tDate\tTime\tType\tDuration(s)\tWhoCalls\n');
+    fprintf(Fid, 'Subject\tDate\tTime\tType\tDuration(s)\tLoggerData\n');
 end
 
 for bb=1:length(BoxOfInterest)
     ParamFilesDir = dir(fullfile(BaseDir,sprintf('box%d',BoxOfInterest(bb)),'bataudio','*_VocTrigger_param.txt'));
-    for ff=1:length(ParamFilesDir)
+    for ff=3:length(ParamFilesDir)
         filepath = fullfile(ParamFilesDir(ff).folder, ParamFilesDir(ff).name);
         % check that the experiment has data!~
         fid = fopen(filepath);

@@ -1,4 +1,4 @@
-function [LoggerDataYN]=result_operant_bat2(Path2ParamFile, Logger_dir)
+function [LoggerDataYN]=result_operant_bat2_who(Path2ParamFile, Logger_dir)
 %% !!! CHANGE TO ADAPT TO COMPUTER
 OutputDataPath = 'Z:\users\tobias\vocOperant\Results';
 PathToGithubFolder = 'C:\Users\Eva\Documents\GitHub';
@@ -256,16 +256,16 @@ if TranscExtract && LoggerDataYN
     end
     
     %% Identify who is calling
-%     Delay2MergeCalls = 100;% in ms
-%     fprintf(' IDENTIFY WHO IS CALLING\n')
-%     WhoCall_dir = dir(fullfile(Logger_dir, sprintf('*%s_%s*whocalls*', Date, ExpStartTime)));
-%     if isempty(WhoCall_dir) || ForceVocExt1 || ForceWhoID || ForceVocExt2
-%         who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,Delay2MergeCalls,1,0,1, 'Factor_RMS_Mic',3);
-%     else
-%         fprintf(1,'Using already processed data\n')
-%     end
-%     % Save the ID of the bat for each logger
-%     save(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData_%d.mat', Date, ExpStartTime, Delay2MergeCalls)), 'BatID','LoggerName','-append')
+    Delay2MergeCalls = 100;% in ms
+    fprintf(' IDENTIFY WHO IS CALLING\n')
+    WhoCall_dir = dir(fullfile(Logger_dir, sprintf('*%s_%s*whocalls*', Date, ExpStartTime)));
+    if isempty(WhoCall_dir) || ForceVocExt1 || ForceWhoID || ForceVocExt2
+        who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,Delay2MergeCalls,1,0,1, 'Factor_RMS_Mic',3);
+    else
+        fprintf(1,'Using already processed data\n')
+    end
+    % Save the ID of the bat for each logger
+    save(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData_%d.mat', Date, ExpStartTime, Delay2MergeCalls)), 'BatID','LoggerName','-append')
 
 %      %% Explore what is said
 %     fprintf('\n*** Identify what is said ***\n')
