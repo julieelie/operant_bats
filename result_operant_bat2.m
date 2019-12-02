@@ -70,8 +70,8 @@ VocId = find(strcmp('Vocalization', Events{EventsEventTypeCol}));
 %% Plot the cumulative number of triggers along time
 fprintf(1,'*** Plotting cumulative events for that day ***\n');
 ColorCode = get(groot,'DefaultAxesColorOrder');
-ReTriggerVocId = find(~isnan(Events{EventsRewardCol}));
-ReVocId = find(~(isnan(Events{EventsRewardCol}) + isinf(Events{EventsRewardCol})));
+ReTriggerVocId = intersect(find(~isnan(Events{EventsRewardCol})),VocId);
+ReVocId = intersect(find(~(isnan(Events{EventsRewardCol}) + isinf(Events{EventsRewardCol}))), VocId);
 
 F=figure(100);
 plot(Events{EventsTimeCol}(VocId)/60,1:length(VocId), 'k-', 'Linewidth',2)
@@ -88,6 +88,10 @@ hold off
 saveas(F,fullfile(OutputDataPath,sprintf('%s_CumTrigger.fig', DataFile(1:16))))
 saveas(F,fullfile(OutputDataPath,sprintf('%s_CumTrigger.jpeg', DataFile(1:16))))
 
+if isempty(VocId)
+    LoggerDataYN = 0;
+    return
+end
 %% Getting info from the param file for that day
 [dataParam] = extractParam(Path2ParamFile);
 
