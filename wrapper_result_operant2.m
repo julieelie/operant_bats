@@ -39,13 +39,15 @@ for bb=1:length(BoxOfInterest)
 
         % FIND THE LINE of your data
         IndexLine = find(contains(data{1}, 'Task stops at'));
-        IndexChar = strfind(data{1}{IndexLine},'after');
-        IndexChar2 = strfind(data{1}{IndexLine},'seconds');
+        if ~isempty(IndexLine)
+            IndexChar = strfind(data{1}{IndexLine},'after');
+            IndexChar2 = strfind(data{1}{IndexLine},'seconds');
 
-        % find the data into that line
-        Temp = str2double(data{1}{IndexLine}((IndexChar + 6):(IndexChar2-2)));
-        if Temp<600
-            continue
+            % find the data into that line
+            Temp = str2double(data{1}{IndexLine}((IndexChar + 6):(IndexChar2-2)));
+            if Temp<600
+                continue
+            end
         end
         LoggerDataYN = result_operant_bat2(filepath);
         Ind_ = strfind(ParamFilesDir(ff).name, '_param');
