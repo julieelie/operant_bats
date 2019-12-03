@@ -8,19 +8,27 @@ WavFileStruc = dir(fullfile(AudioDataPath, sprintf('%s_%s_%s*mic*.wav', Subj, Da
 Length_Filename = fullfile(AudioDataPath, sprintf('%s_%s_%s_Length_Y.mat',Subj, Date, Time));
 if ~exist(Length_Filename, 'file') || Force
     fprintf(1,'Calculating length of each sound file to allign extract...\n')
+    % Find out file indices
     Nfiles = length(WavFileStruc);
-    Length_Y = nan(Nfiles,1);
-%     Sample_on_Y = nan(Nfiles,1);
+    File_Idx = nan(Nfiles,1);
     for yy=1:Nfiles
-        fprintf(1,'File %d/%d\n', yy,Nfiles)
+        Ind_ = strfind(WavFileStruc(yy).name,'_');
+        Indwav = strfind(WavFileStruc(yy).name,'.wav');
+        File_Idx(yy) = str2double(WavFileStruc(yy).name((Ind_(end)+1) : (Indwav-1)));
+    end
+        
+    Length_Y = nan(max(File_Idx),1);
+    
+%     Sample_on_Y = nan(Nfiles,1);
+    for yy=1:max(File_Idx)
+        fprintf(1,'File %d/%d\n', yy,max(File_Idx))
         % get the files in the correct order
-        Wavefile=dir(fullfile(WavFileStruc(yy).folder, sprintf('%s*_%d.wav',WavFileStruc(yy).name(1:(end-7)),yy)));
-        if isempty(Wavefile)
-            warning('The following raw file is not in the folder:\n%s\nNo data are extracted for these 10 min chunck\n',fullfile(WavFileStruc(yy).folder, sprintf('%s*_%d.wav',WavFileStruc(yy).name(1:(end-7)),yy)));
+        yysorted = find(File_Idx==yy);
+        if isempty(yysorted)
+            warning('The following raw file is not in the folder:\n%s\nNo data are extracted for these 10 min chunck\n',fullfile(WavFileStruc(1).folder, sprintf('%s*_%d.wav',WavFileStruc(1).name(1:(end-7)),yy)));
             continue
         end
-            
-        Wavefile_local = fullfile(WavFileStruc(yy).folder, Wavefile.name);
+        Wavefile_local=fullfile(WavFileStruc(yysorted).folder,WavFileStruc(yysorted).name);    
         [Y,FS] = audioread(Wavefile_local);
         Length_Y(yy) = length(Y);
         
@@ -71,7 +79,7 @@ if ~exist(Length_Filename, 'file') || Force
     end
     % Best estimate of the file length is the mean of the others for the
     % non ones
-    Length_Y(isnan(Length_Y)) = round(nanmean(Length_Y));
+    Length_Y(isnan(Length_Y)) = round(nanmean(Length_Y(1:end-1)));
     save(Length_Filename,'Length_Y')
 else
     fprintf('Files length have already been calculated, loading the values from\n%s\nSet Force =1 to overwrite previous calculations\n', Length_Filename);
