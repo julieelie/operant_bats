@@ -15,6 +15,11 @@ if ~exist(Length_Filename, 'file') || Force
         fprintf(1,'File %d/%d\n', yy,Nfiles)
         % get the files in the correct order
         Wavefile=dir(fullfile(WavFileStruc(yy).folder, sprintf('%s*_%d.wav',WavFileStruc(yy).name(1:(end-7)),yy)));
+        if isempty(Wavefile)
+            warning('The following raw file is not in the folder:\n%s\nNo data are extracted for these 10 min chunck\n',fullfile(WavFileStruc(yy).folder, sprintf('%s*_%d.wav',WavFileStruc(yy).name(1:(end-7)),yy)));
+            continue
+        end
+            
         Wavefile_local = fullfile(WavFileStruc(yy).folder, Wavefile.name);
         [Y,FS] = audioread(Wavefile_local);
         Length_Y(yy) = length(Y);
@@ -64,6 +69,9 @@ if ~exist(Length_Filename, 'file') || Force
 %         hold off
 %         title(sprintf('Lay-off file %d',yy))
     end
+    % Best estimate of the file length is the mean of the others for the
+    % non ones
+    Length_Y(isnan(Length_Y)) = round(nanmean(Length_Y));
     save(Length_Filename,'Length_Y')
 else
     fprintf('Files length have already been calculated, loading the values from\n%s\nSet Force =1 to overwrite previous calculations\n', Length_Filename);

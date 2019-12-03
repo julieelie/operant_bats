@@ -11,6 +11,7 @@ addpath(genpath(fullfile(PathToGithubFolder,'SoundAnalysisBats')))
 addpath(genpath(fullfile(PathToGithubFolder,'LMC')))
 ForceWhoID = 0; % In case the identification of bats was already done but you want to re-do it again
 % ForceWhat = 1; % In case running biosound was already done but you want to re-do it
+UseOld = 0; % Set to 1 if you want to use old data in Who calls
 close all
 % Get the recording data
 [AudioDataPath, DataFile ,~]=fileparts(Path2ParamFile);
@@ -77,8 +78,14 @@ end
 Delay2MergeCalls = 10;% in ms
 fprintf(' IDENTIFY WHO IS CALLING\n')
 WhoCall_dir = dir(fullfile(Logger_dir, sprintf('*%s_%s*whocalls*', Date, ExpStartTime)));
+if ~isempty(WhoCall_dir)
+    ForceWhoID = input('Data already fully or half processed do you want to resume? (yes->1 no->0)\n');
+    if ForceWhoID
+        UseOld = input('Do you want to use old data (or start from scratch)? (yes use old data->1 no->0)\n');
+    end
+end
 if isempty(WhoCall_dir) || ForceWhoID
-    who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,Delay2MergeCalls,1,0,1, 'Factor_RMS_Mic',3);
+    who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,Delay2MergeCalls,1,UseOld,1, 'Factor_RMS_Mic',3);
 else
     fprintf(1,'Using already processed data\n')
 end
