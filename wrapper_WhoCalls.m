@@ -79,7 +79,9 @@ for bb=1:length(BoxOfInterest)
                     fprintf(FidCheck, '%s\t%s\t%s\t%s\t%.1f\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),Temp);
                 end
             end
-        end    
+        else
+            fprintf(1, '   -> No piezo Data for that file\n')
+        end
     end
 end
 close(FidWho)
