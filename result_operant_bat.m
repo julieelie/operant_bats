@@ -506,7 +506,7 @@ if TranscExtract
 
      %% Explore what is said
     fprintf('\n*** Identify what is said ***\n')
-    WhatCall_dir = dir(fullfile(Logger_dir, sprintf('*%s_%s*whatcalls*', Date, ExpStartTime)));
+    WhatCall_dir = dir(fullfile(Logger_dir,'VocExtracts', sprintf('*%s_%s*Elmt*Raw.wav', Date, ExpStartTime)));
     if isempty(WhatCall_dir) || ForceVocExt1 || ForceWhoID || ForceVocExt2 || ForceWhat
         what_calls(Logger_dir,Date, ExpStartTime);
     else
