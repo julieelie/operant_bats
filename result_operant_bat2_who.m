@@ -13,7 +13,7 @@ addpath(genpath(fullfile(PathToGithubFolder,'SoundAnalysisBats')))
 addpath(genpath(fullfile(PathToGithubFolder,'LMC')))
 ForceWhoID = 0; % In case the identification of bats was already done but you want to re-do it again
 % ForceWhat = 1; % In case running biosound was already done but you want to re-do it
-UseOld = 0; % Set to 1 if you want to use old data in Who calls
+UseOld = 1; % Set to 1 if you want to use old data in Who calls
 close all
 % Get the recording data
 [AudioDataPath, DataFile ,~]=fileparts(Path2ParamFile);
@@ -87,7 +87,7 @@ if ~isempty(WhoCall_dir)
     end
 end
 if isempty(WhoCall_dir) || ForceWhoID
-    who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,Delay2MergeCalls,1,UseOld,1, 'Factor_RMS_Mic',3,'Working_dir',WorkDir);
+    who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,Delay2MergeCalls,1,UseOld,1, 'Factor_RMS_Mic',3,'Working_dir',WorkDir,'Force_Save_onoffsets_mic',1,'SaveFileType','fig');
 else
     fprintf(1,'Using already processed data\n')
 end
