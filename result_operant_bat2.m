@@ -45,7 +45,7 @@ end
 
 %% Get the sample stamp of the detected vocalizations
 fprintf(1,'*** Getting events for that day ***\n');
-DataFileStruc = dir(fullfile(AudioDataPath, [DataFile(1:16) '*events.txt']));
+DataFileStruc = dir(fullfile(AudioDataPath, [DataFile(1:16) '*VocTrigger_events.txt']));
 Fid_Data = fopen(fullfile(DataFileStruc.folder,DataFileStruc.name));
 EventsHeader = textscan(Fid_Data, '%s\t%s\t%s\t%s\t%s\t%s\t%s\n',1);
 for hh=1:length(EventsHeader)
@@ -173,9 +173,23 @@ if TranscExtract && LoggerDataYN
            EventLogCSV = fullfile(Logger_local, 'EVENTLOG.csv');
            status2 = system(sprintf('%s %s %s',EventFileExe, EventLogNL,EventLogCSV));
            if ~status2
-               disp(['**** Eventfile successfully converted from ' Logger_local ' #' Logger_num ' ****'])
+               FID = fopen(EventLogCSV);
+                Exp_info = textscan(FID, '%s',3,'Delimiter','\r'); %#ok<NASGU> % The three first lines are old settings of the experiment that are not relevant anymore
+                Header = textscan(FID, '%s %s %s %s %s %s',1, 'Delimiter', ',');
+                Data = textscan(FID, '%s %s %f %s %s %s', 'Delimiter', ',');
+                fclose(FID);
+                if ~any(~cellfun('isempty',Exp_info)) || ~any(~cellfun('isempty',Header)) || ~any(~cellfun('isempty',Data))
+                    disp(['!!!  Failed to convert eventfile from ' Logger_local ' #' Logger_num ' !!!!'])
+                    LoggerDataYN = 0;
+                    return
+                else
+                    clear Exp_info Data Header
+                    disp(['**** Eventfile successfully converted from ' Logger_local ' #' Logger_num ' ****'])
+                end
            else
                disp(['!!!  Failed to convert eventfile from ' Logger_local ' #' Logger_num ' !!!!'])
+               LoggerDataYN = 0;
+               return
            end
             
             % run extraction
