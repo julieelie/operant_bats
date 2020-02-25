@@ -142,22 +142,17 @@ if TranscExtract && LoggerDataYN
         % Find if there was 2 or one bat
         LogicInd_BatFront = contains(Data{1},dataParam.batFront(1:2));
         LogicInd_BatBack = contains(Data{1},dataParam.batBack(1:2));
-        if sum(LogicInd_BatFront) && sum(LogicInd_BatBack) % case of 2 bats
+        if sum(LogicInd_BatFront) && LogicInd_BatBack % case of 2 bats
             if strcmp(Data{3}{find(LogicInd_BatFront)},'Y') == 1 && strcmp(Data{3}{find(LogicInd_BatBack)},'N') == 1
                 BATID = dataParam.batFront;
             elseif strcmp(Data{3}{find(LogicInd_BatFront)},'N') == 1 && strcmp(Data{3}{find(LogicInd_BatBack)},'Y') == 1
                 BATID = dataParam.batBack;
             elseif strcmp(Data{3}{find(LogicInd_BatFront)},'Y') == 1 && strcmp(Data{3}{find(LogicInd_BatBack)},'Y') == 1
-                if str2num(Data{4}{find(LogicInd_BatFront)}) <= str2num(Date) && str2num(Data{5}{find(LogicInd_BatFront)}) >= str2num(Date)
-                    BATID = dataParam.batFront;
-                else
-                    BATID = dataParam.batBack;
-                end
+            if str2num(Data{4}{find(contains(Data{1},dataParam.batFront(1:2)))}) <= str2num(Date) && str2num(Data{5}{find(contains(Data{1},dataParam.batFront(1:2)))}) >= str2num(Date)
+                BATID = dataParam.batFront;
+            else
+                BATID = dataParam.batBack;
             end
-        elseif sum(LogicInd_BatFront) && strcmp(Data{3}{find(LogicInd_BatFront)},'Y') == 1 % only one bat in the front and wearing the colar
-            BATID = dataParam.batFront;
-        elseif sum(LogicInd_BatBack) && strcmp(Data{3}{find(LogicInd_BatBack)},'Y') == 1 % only one bat in the front and wearing the colar
-            BATID = dataParam.batBack;
         end
         BatID{ll} = BATID;
         

@@ -1,8 +1,8 @@
 % NOTE: We are focusing on VocTrigger experiments that are longer than 10
 % min.
-OutputDataPath = 'Z:\users\tobias\vocOperant\Results';
-BaseDir = 'Z:\users\tobias\vocOperant';
-BoxOfInterest = [3 4 6 8];
+OutputDataPath = 'Z:\tobias\vocOperant\Results';
+BaseDir = 'Z:\tobias\vocOperant';
+BoxOfInterest = [4 6 8];%[3 4 6 8]
 ExpLog = fullfile(OutputDataPath, 'VocOperantLogWhoCalls.txt');
 
 if ~exist(ExpLog, 'file')

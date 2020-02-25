@@ -1,6 +1,6 @@
 function [WhoDataYN]=result_operant_bat2_who(Path2ParamFile, Logger_dir)
 %% !!! CHANGE TO ADAPT TO COMPUTER
-OutputDataPath = 'Z:\users\tobias\vocOperant\Results';
+OutputDataPath = 'Z:\tobias\vocOperant\Results';
 PathToGithubFolder = 'C:\Users\Eva\Documents\GitHub';
 FileBatList = fullfile(OutputDataPath,'BatList.txt');
 Path2LocalDocuments = 'C:\Users\Eva\Documents';
@@ -87,7 +87,7 @@ if ~isempty(WhoCall_dir)
     end
 end
 if isempty(WhoCall_dir) || ForceWhoID
-    who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,Delay2MergeCalls,1,UseOld,1, 'Factor_RMS_Mic',3,'Working_dir',WorkDir,'Force_Save_onoffsets_mic',1,'SaveFileType','fig');
+    who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,Delay2MergeCalls,1,UseOld,1, 'Factor_RMS_Mic',8,'Working_dir',WorkDir,'Force_Save_onoffsets_mic',1,'SaveFileType','fig');
 else
     fprintf(1,'Using already processed data\n')
 end

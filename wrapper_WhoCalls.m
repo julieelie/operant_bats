@@ -1,7 +1,7 @@
 % NOTE: We are focusing on VocTrigger experiments that are longer than 10
 % min.
-OutputDataPath = 'Z:\users\tobias\vocOperant\Results';
-BaseDir = 'Z:\users\tobias\vocOperant';
+OutputDataPath = 'Z:\tobias\vocOperant\Results';
+BaseDir = 'Z:\tobias\vocOperant';
 BoxOfInterest = [3 4 6 8];
 ExpLog = fullfile(OutputDataPath, 'VocOperantLogWhoCalls.txt');
 WhoLog = fullfile(OutputDataPath, 'VocOperantLogWhoCallsDone.txt');
@@ -29,7 +29,12 @@ if ~exist(CheckAllignmentLog, 'file')
     FidCheck = fopen(CheckAllignmentLog, 'a');
     fprintf(FidCheck, 'Subject\tDate\tTime\tType\tDuration(s)\n');
 else
+    FidCheck = fopen(CheckAllignmentLog, 'r');
+    Header2 = textscan(FidCheck,'%s\t%s\t%s\t%s\t%s',1);
+    CrapList = textscan(FidCheck,'%s\t%s\t%s\t%s\t%.1f');
+    fclose(FidCheck);
     FidCheck = fopen(CheckAllignmentLog, 'a');
+    
 end
 
 for bb=1:length(BoxOfInterest)
@@ -43,7 +48,8 @@ for bb=1:length(BoxOfInterest)
         Time = ParamFilesDir(ff).name(13:16);
         ToDo = find(contains(ToDoList{1},BatsID) .* contains(ToDoList{2},Date) .* contains(ToDoList{3},Time).*logical(ToDoList{6}));
         Done = find(contains(DoneList{1},BatsID) .* contains(DoneList{2},Date) .* contains(DoneList{3},Time).*logical(DoneList{6}));
-        if ~isempty(ToDo)
+        Crap = find(contains(CrapList{1},BatsID) .* contains(CrapList{2},Date) .* contains(CrapList{3},Time));
+        if ~isempty(ToDo) && isempty(Crap)
             if ~isempty(Done)
                 fprintf(1, '   -> Data already processed\n')
                 continue
@@ -79,8 +85,10 @@ for bb=1:length(BoxOfInterest)
                     fprintf(FidCheck, '%s\t%s\t%s\t%s\t%.1f\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),Temp);
                 end
             end
-        else
+        elseif isempty(Crap)
             fprintf(1, '   -> No piezo Data for that file\n')
+        elseif ~isempty(Crap)
+            fprintf(1, '   -> That file was already identified as crappy\n')
         end
     end
 end
