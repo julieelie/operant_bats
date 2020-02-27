@@ -148,7 +148,7 @@ for ss=1:NVoc
             [Y,FS] = audioread(Wavefile_local);
             Buffer = Buffer_s*FS;
         catch
-            fprintf(1,'Warning: the audiofile %s cannot be read properly!!\n', Wavefile_local);
+            fprintf(1,'Warning: the audiofile %s cannot be read properly!!\n', fullfile(RawWav_dir, sprintf('%s_%s_%s*mic*_%d.wav',Subj, Date, ExpStartTime, File_Idx)));
             fprintf(1,'Data will not be retrieved\n')
             continue
         end
