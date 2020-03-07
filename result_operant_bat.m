@@ -5,7 +5,7 @@ addpath(genpath('/Users/elie/Documents/CODE/SoundAnalysisBats'))
 TranscExtract = 1; % set to 1 to extract logger data and transceiver time
 ForceExtract = 0; % set to 1 to redo the extraction of loggers otherwise the calculations will use the previous extraction data
 ForceAllign = 0; % In case the TTL pulses allignment was already done but you want to do it again, set to 1
-ForceReExt = 1; % In case the extraction of reward times was not done and you want to do it
+ForceVocExt3 = 1; % Used to patch the error in voc_localize_operant with call already detected issue
 ForceVocExt1 = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
 ForceVocExt2 = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
 ForceWhoID = 0; % In case the identification of bats was already done but you want to re-do it again
@@ -485,14 +485,14 @@ if TranscExtract
     end
     
     load(fullfile(AudioDataPath, sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)),'Re_transc_time');
-    if ~exist('Re_transc_time','var') || ForceReExt
+    if ~exist('Re_transc_time','var') || ForceVocExt3
         fprintf(1,'*** Localizing and extracting reward times ***\n');
-        re_localize_operant(AudioDataPath, DataFile(1:4),Date, ExpStartTime)
+        voc_localize_operant_patch(AudioDataPath, DataFile(1:4),Date, ExpStartTime)
     end
     %% Identify the same vocalizations on the piezos and save sound extracts, onset and offset times
     fprintf(' LOCALIZING VOCALIZATIONS ON PIEZO RECORDINGS\n')
     LogVoc_dir = dir(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData.mat', Date, ExpStartTime)));
-    if isempty(LogVoc_dir) || ForceVocExt1 || ForceVocExt2
+    if isempty(LogVoc_dir) || ForceVocExt1 || ForceVocExt2 || ForceVocExt3
         get_logger_data_voc(AudioDataPath, Logger_dir,Date, ExpStartTime, 'SerialNumber',SerialNumberAL);
     else
         fprintf(1,'Using already processed data\n')
