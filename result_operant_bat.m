@@ -484,7 +484,8 @@ if TranscExtract
         fprintf(1,'*** ALREADY DONE: Localizing and extracting vocalizations that triggered the sound detection ***\n');
     end
     
-    if ForceReExt
+    load(fullfile(AudioDataPath, sprintf('%s_%s_VocExtractTimes.mat', Date, ExpStartTime)),'Re_transc_time');
+    if ~exist('Re_transc_time','var') || ForceReExt
         fprintf(1,'*** Localizing and extracting reward times ***\n');
         re_localize_operant(AudioDataPath, DataFile(1:4),Date, ExpStartTime)
     end
