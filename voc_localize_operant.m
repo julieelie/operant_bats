@@ -150,7 +150,7 @@ for ss=1:NVoc
     end
     
     % Make sure that stamp does not correspond to a call already saved
-    Idx_Stamp_Y = Stamp - sum(Length_Y(1:(File_Idx-1)));
+    Idx_Stamp_Y = Stamp - sum(Length_Y(1:(File_Idx(ss)-1)));
     Done = 0;
     for ii=1:(ss-1)
         if (Idx_Stamp_Y>=Voc_samp_idx(ii,1)) && (Idx_Stamp_Y<=Voc_samp_idx(ii,2)) && (File_Idx(ss)==File_Idx(ii))
