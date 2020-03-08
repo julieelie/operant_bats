@@ -153,7 +153,7 @@ for ss=1:NVoc
     Idx_Stamp_Y = Stamp - sum(Length_Y(1:(File_Idx-1)));
     Done = 0;
     for ii=1:(ss-1)
-        if (Idx_Stamp_Y>Voc_samp_idx(ii,1)) && (Idx_Stamp_Y<Voc_samp_idx(ii,2)) && (File_Idx(ss)==File_Idx(ii))
+        if (Idx_Stamp_Y>=Voc_samp_idx(ii,1)) && (Idx_Stamp_Y<=Voc_samp_idx(ii,2)) && (File_Idx(ss)==File_Idx(ii))
             fprintf('Call already extracted!\n')
             if isnan(Re_samp_idx(ii)) && ~isnan(Time2Reward(ss)) % this is the first call of the sequence that got rewarded
                 % saving the time to get the reward for that vocalization
