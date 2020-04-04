@@ -10,6 +10,7 @@ PriorityDates2 = [161122 190603];
 ExpLog = fullfile(OutputDataPath, 'VocOperantLogWhoCalls.txt');
 WhoLog = fullfile(OutputDataPath, 'VocOperantLogWhoCallsDone.txt');
 CheckAllignmentLog = fullfile(OutputDataPath, 'VocOperantLogCheckAllignement.txt');
+TrashEcholocationCalls = fullfile(OutputDataPath, 'VocOperantLogEcholocation.txt');
 
 FidExp = fopen(ExpLog, 'r');
 Header = textscan(FidExp,'%s\t%s\t%s\t%s\t%s\t%s\n');
@@ -32,6 +33,7 @@ end
 if ~exist(CheckAllignmentLog, 'file')
     FidCheck = fopen(CheckAllignmentLog, 'a');
     fprintf(FidCheck, 'Subject\tDate\tTime\tType\tDuration(s)\n');
+    CrapList = [];
 else
     FidCheck = fopen(CheckAllignmentLog, 'r');
     Header2 = textscan(FidCheck,'%s\t%s\t%s\t%s\t%s',1);
@@ -39,6 +41,18 @@ else
     fclose(FidCheck);
     FidCheck = fopen(CheckAllignmentLog, 'a');
     
+end
+
+if ~exist(TrashEcholocationCalls, 'file')
+    FidEcho = fopen(TrashEcholocationCalls, 'a');
+    fprintf(FidEcho, 'Subject\tDate\tTime\tType\tDuration(s)\n');
+    EchoList = [];
+else
+    FidEcho = fopen(TrashEcholocationCalls, 'r');
+    Header2 = textscan(FidEcho,'%s\t%s\t%s\t%s\t%s',1);
+    EchoList = textscan(FidEcho,'%s\t%s\t%s\t%s\t%.1f');
+    fclose(FidEcho);
+    FidEcho = fopen(TrashEcholocationCalls, 'a');
 end
 
 for bb=1:length(BoxOfInterest)
@@ -52,14 +66,15 @@ for bb=1:length(BoxOfInterest)
         % already done or labbeled as crappy.
         BatsID = ParamFilesDir(ff).name(1:4);
         Date = ParamFilesDir(ff).name(6:11);
-        if (sum(contains(PriorityPairs1, BatsID)) && str2double(Date)>PriorityDates1(1) && str2double(Date)<PriorityDates1(2)) || (sum(contains(PriorityPairs2, BatsID)) && str2double(Date)>PriorityDates2(1) && str2double(Date)<PriorityDates2(2))
+        if (sum(contains(PriorityPairs1, BatsID)) && (str2double(Date)>PriorityDates1(1)) && (str2double(Date)<PriorityDates1(2))) || (sum(contains(PriorityPairs2, BatsID)) && (str2double(Date)>PriorityDates2(1)) && (str2double(Date)<PriorityDates2(2)))
             if ~((strcmp(BatsID, 'TeTa') || strcmp(BatsID, 'TaTe')) && str2double(Date)<190618) % TeTa Bats were doing echolocation calls before June 18th 2019
                 Time = ParamFilesDir(ff).name(13:16);
                 ToDo = find(contains(ToDoList{1},BatsID) .* contains(ToDoList{2},Date) .* contains(ToDoList{3},Time).*logical(ToDoList{6}));
                 Done = find(contains(DoneList{1},BatsID) .* contains(DoneList{2},Date) .* contains(DoneList{3},Time).*logical(DoneList{6}));
                 Crap = find(contains(CrapList{1},BatsID) .* contains(CrapList{2},Date) .* contains(CrapList{3},Time));
+                Echo = find(contains(EchoList{1},BatsID) .* contains(EchoList{2},Date) .* contains(EchoList{3},Time));
                 
-                if ~isempty(ToDo) && isempty(Crap)
+                if ~isempty(ToDo) && isempty(Crap) && isempty(Echo)
                     if ~isempty(Done)
                         fprintf(1, '   -> Data already processed\n')
                         continue
@@ -86,13 +101,19 @@ for bb=1:length(BoxOfInterest)
                         fprintf('\n')
                         close(FigAP)
                         
-                        if sum(Check)==length(Check)
-                            WhoDataYN = result_operant_bat2_who(filepath);
-                            Ind_ = strfind(ParamFilesDir(ff).name, '_param');
-                            fprintf(FidWho, '%s\t%s\t%s\t%s\t%.1f\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),Temp,WhoDataYN);
-                        else
+                        if sum(Check)~=length(Check)
                             Ind_ = strfind(ParamFilesDir(ff).name, '_param');
                             fprintf(FidCheck, '%s\t%s\t%s\t%s\t%.1f\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),Temp);
+                        else
+                            EchoYes = input('Did you identify that file as at least having the first 10 sequences being echolocation calls? (yes ->1, No -> 0): ');
+                            if  ~EchoYes
+                                WhoDataYN = result_operant_bat2_who(filepath);
+                                Ind_ = strfind(ParamFilesDir(ff).name, '_param');
+                                fprintf(FidWho, '%s\t%s\t%s\t%s\t%.1f\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),Temp,WhoDataYN);
+                            else
+                                Ind_ = strfind(ParamFilesDir(ff).name, '_param');
+                                fprintf(FidEcho, '%s\t%s\t%s\t%s\t%.1f\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),Temp);
+                            end
                         end
                     end
                 elseif isempty(Crap)
@@ -108,4 +129,7 @@ for bb=1:length(BoxOfInterest)
         end
     end
 end
-close(FidWho)
+fclose(FidWho);
+fclose(FidEcho);
+fclose(FidCheck);
+
