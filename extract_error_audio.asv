@@ -10,7 +10,6 @@ for bb=1:length(BoxOfInterest)
     for dd=1:length(DatesDir)
         indsrc = dir(fullfile(DatesDir(dd).folder, DatesDir(dd).name,'audiologgers', '*_VocExtractData_*'));
         wavsrc = dir(fullfile(DatesDir(dd).folder, DatesDir(dd).name,'audiologgers', '*_VocExtractData.mat'));
-        if (length(wavsrc) == length(indsrc))
         for ff=1:length(wavsrc)
             if (~isempty(wavsrc)) && (~isempty(indsrc))
                 load(fullfile(wavsrc(ff).folder,wavsrc(ff).name), 'Raw_wave','FS');
@@ -44,7 +43,7 @@ for bb=1:length(BoxOfInterest)
                             end
                         end
                         %repeat for IndNoiseStart/Stop
-                        if (length(log_mic_starts_noise) == length(log_mic_stops_noise)) && ~isempty(log_mic_starts_noise)
+                        if (length(log_mic_starts_noise) == length(log_mic_stops_noise))
                             for ll=1:(length(log_mic_starts_noise) - 1)
                                 noiseSnippet = WL(log_mic_starts_noise(logger):log_mic_stops_noise(logger));
                                 noiseFiltWL = filtfilt(sos_high_raw, 1, noiseSnippet);
@@ -56,7 +55,6 @@ for bb=1:length(BoxOfInterest)
                     end
                 end
             end
-        end
         end
     end
 end
