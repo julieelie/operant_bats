@@ -1,62 +1,62 @@
 % Converts vocal extraction data in .mat files into relevant .wav files,
 % separating the audio by type. Writes into folder Z:\tobias\vocOperant\error_clips
+% Files are saved in the format Date_Time_VocExtractData_RecordingIndex_Type(Log or Mic)_LogorMicStartIndex.wav
 
 OutputDataPath = 'Z:\tobias\vocOperant\error_clips';
 BaseDir = 'Z:\tobias\vocOperant';
 BoxOfInterest = [3 4 6 8];
-                
+
+% Iterates through dates and audio recordings for hard-coded boxes
 for bb=1:length(BoxOfInterest)
     DatesDir = dir(fullfile(BaseDir,sprintf('box%d',BoxOfInterest(bb)),'piezo', '1*'));
     for dd=1:length(DatesDir)
         indsrc = dir(fullfile(DatesDir(dd).folder, DatesDir(dd).name,'audiologgers', '*_VocExtractData_*'));
         wavsrc = dir(fullfile(DatesDir(dd).folder, DatesDir(dd).name,'audiologgers', '*_VocExtractData.mat'));
-        if (length(wavsrc) == length(indsrc))
-        for ff=1:length(wavsrc)
-            if (~isempty(wavsrc)) && (~isempty(indsrc))
+        if (length(wavsrc) == length(indsrc)) && (~isempty(wavsrc))
+            for ff=1:length(wavsrc)
+                % Structure of Raw_wave: cell array, where each cell is one recording, and that
+                % recording is a cell array of the signals. FS is signal frequency.
                 load(fullfile(wavsrc(ff).folder,wavsrc(ff).name), 'Raw_wave','FS');
+
+                % Each cell of IndVocStartRaw corresponds to a recording. For each recording, there
+                % is a 2-cell array (1=logger; 2=mic), and the logger/mic each contain another cell
+                % array with all of the start indices to be used on Raw_wave.
                 load(fullfile(indsrc(ff).folder,indsrc(ff).name),  'IndVocStartRaw', 'IndVocStopRaw', 'IndNoiseStartRaw', 'IndNoiseStopRaw');
-                % Do we even need to save the clip names? Use this if yes:
-                % clip_names = cell(sum(cellfun(@length,IndVocStartRaw)));
-                % clip_names(vv * (length(IndVocStartRaw(vv)) - 1) + logger) = ...
-                
-                % Filter for the Mic signal
+
+                % Create filter for mic signal
                 [z,p,k] = butter(3,100/(FS/2),'high');
                 sos_high_raw = zp2sos(z,p,k);
-                
-                for vv=1:length(Raw_wave)
-                    WL = Raw_wave{vv};
-                    
-                    for log=1:length(IndVocStartRaw{vv})
-                        % convert with / 1000 * FS ??
-                        log_mic_starts = IndVocStartRaw{vv}{log};
-                        log_mic_stops = IndVocStopRaw{vv}{log};
-                        log_mic_starts_noise = IndNoiseStartRaw{vv}{log};
-                        log_mic_stops_noise = IndNoiseStopRaw{vv}{log};
-                        if (length(log_mic_starts) == length(log_mic_stops))
-                            for ll=1:(length(log_mic_starts) - 1)
-                                vocSnippet = WL(log_mic_starts(ll):log_mic_stops(ll));
-                                % filter and center the data
-                                vocFiltWL = filtfilt(sos_high_raw, 1, vocSnippet);
-                                vocFiltWL = vocFiltWL - mean(vocFiltWL);
-                                % get name and write to file
-                                voc_name = sprintf('%s__%d_%d_%d.wav', wavsrc(ff).name(1:end-4), vv, log, ll);
-                                audiowrite(fullfile(OutputDataPath, voc_name), vocSnippet, FS)
-                            end
-                        end
-                        %repeat for IndNoiseStart/Stop
-                        if (length(log_mic_starts_noise) == length(log_mic_stops_noise)) && ~isempty(log_mic_starts_noise)
-                            for ll=1:(length(log_mic_starts_noise) - 1)
-                                noiseSnippet = WL(log_mic_starts_noise(logger):log_mic_stops_noise(logger));
-                                noiseFiltWL = filtfilt(sos_high_raw, 1, noiseSnippet);
-                                noiseFiltWL = noiseFiltWL - mean(noiseFiltWL);
-                                noise_name = sprintf('%s__%d_%d_%d.wav', wavsrc(ff).name(1:end-4), vv, log, ll);
-                                audiowrite(fullfile(OutputDataPath, noise_name), noiseSnippet, FS)
+
+                % Extracts snippets specified by loaded-in variables (above) & saves as .WAV
+                if ~isempty(Raw_wave)
+                    for vv=1:length(Raw_wave)
+                        WL = Raw_wave{vv};
+                        if (~isempty(IndVocStartRaw)) && length(IndVocStartRaw{vv}) == length(IndNoiseStartRaw{vv})
+                            for log=1:length(IndVocStartRaw{vv})
+                                % convert with / 1000 * FS ??
+                                starts_list = [IndVocStartRaw{vv}{log}, IndNoiseStartRaw{vv}{log}];
+                                stops_list = [IndVocStopRaw{vv}{log}, IndNoiseStopRaw{vv}{log}];
+                                type_list = ["mic", "log"];
+
+                                % Get audio snippet, filter + center data, then write to file
+                                for ii=1:length(type)
+                                    starts = starts_list{ii};
+                                    stops = stops_list{ii};
+                                    if (length(starts) == length(stops)) && ~isempty(starts)
+                                        for ll=1:length(starts)
+                                            snippet = WL(starts(ll):stops(ll));
+                                            FiltWL = filtfilt(sos_high_raw, 1, snippet);
+                                            FiltWL = vocFiltWL - mean(FiltWL);
+                                            file_name = sprintf('%s__%d_%d_%d.wav', wavsrc(ff).name(1:end-4), vv, type_list(ii), ll);
+                                            audiowrite(fullfile(OutputDataPath, file_name), snippet, FS)
+                                        end
+                                    end
+                                end
                             end
                         end
                     end
                 end
             end
-        end
         end
     end
 end
