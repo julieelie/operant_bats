@@ -32,23 +32,26 @@ for bb=1:length(BoxOfInterest)
                     for vv=1:length(Raw_wave)
                         WL = Raw_wave{vv};
                         if (~isempty(IndVocStartRaw)) && length(IndVocStartRaw{vv}) == length(IndNoiseStartRaw{vv})
-                            for log=1:length(IndVocStartRaw{vv})
+                            for log=1:length(IndVocStartRaw{vv}) % for each vocalization
                                 % convert with / 1000 * FS ??
                                 starts_list = [IndVocStartRaw{vv}{log}, IndNoiseStartRaw{vv}{log}];
                                 stops_list = [IndVocStopRaw{vv}{log}, IndNoiseStopRaw{vv}{log}];
                                 type_list = ["mic", "log"];
+                                v_n = ["noise", "voc"];
 
                                 % Get audio snippet, filter + center data, then write to file
-                                for ii=1:length(type)
-                                    starts = starts_list{ii};
-                                    stops = stops_list{ii};
-                                    if (length(starts) == length(stops)) && ~isempty(starts)
-                                        for ll=1:length(starts)
-                                            snippet = WL(starts(ll):stops(ll));
-                                            FiltWL = filtfilt(sos_high_raw, 1, snippet);
-                                            FiltWL = vocFiltWL - mean(FiltWL);
-                                            file_name = sprintf('%s__%d_%d_%d.wav', wavsrc(ff).name(1:end-4), vv, type_list(ii), ll);
-                                            audiowrite(fullfile(OutputDataPath, file_name), snippet, FS)
+                                for ii=1:length(type) % for both inputs (logger and mic)
+                                    if (length(starts) == length(stops)) && ~isempty(starts):
+                                        for ss=1:length(starts): % for noise and voc indices
+                                        starts = starts_list{ss};
+                                        stops = stops_list{ss};
+                                            for ll=1:length(starts) % for indices in noise and voc lists
+                                                snippet = WL(starts(ll):stops(ll));
+                                                FiltWL = filtfilt(sos_high_raw, 1, snippet);
+                                                FiltWL = vocFiltWL - mean(FiltWL);
+                                                file_name = sprintf('%s__%d_%s_%s_%d.wav', wavsrc(ff).name(1:end-4), vv, type_list(ii), v_n(ss), ll);
+                                                audiowrite(fullfile(OutputDataPath, file_name), snippet, FS)
+                                            end
                                         end
                                     end
                                 end
