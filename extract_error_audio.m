@@ -31,7 +31,7 @@ for bb=1:length(BoxOfInterest)
                 if ~isempty(Raw_wave)
                     for vv=1:length(Raw_wave)
                         WL = Raw_wave{vv};
-                        if (~isempty(IndVocStartRaw)) && vv <= length(IndVocStartRaw) && length(IndVocStartRaw{vv}) == length(IndNoiseStartRaw{vv})
+                        if vv <= length(IndVocStartRaw) &&~isempty(IndVocStartRaw{vv}) && length(IndVocStartRaw{vv}) == length(IndNoiseStartRaw{vv})
                             type_list = ["mic", "log"];
                             for log=1:2 % for each vocalization
                                 % convert with / 1000 * FS ??
