@@ -54,7 +54,7 @@ for bb=1:length(BoxOfInterest)
                             type_list = ["log", "mic"];
                             v_n = ["voc", "noise"];
                             for Channeli=1:length(IndVocStartRaw{vv}) % for each channel (logger or microphone)
-                                if isempty(IndVocStartRaw{vv}{Channeli}) && isempty(IndNoiseStartRaw{vv}{Channeli})
+                                if isempty(IndVocStartRaw{vv}{Channeli}) && isempty(IndNoiseStartRaw{vv}{Channeli}) || Channeli >= length(IndVocStartRaw{vv})
                                     % No sound detected on this channel for
                                     % this sequence
                                     continue
@@ -62,16 +62,17 @@ for bb=1:length(BoxOfInterest)
                                 % convert with / 1000 * FS ??
                                 starts_list = [IndVocStartRaw{vv}{Channeli}, IndNoiseStartRaw{vv}{Channeli}]; % This is a vector of all the onsets of sound extracts in the sequence vv
                                 stops_list = [IndVocStopRaw{vv}{Channeli}, IndNoiseStopRaw{vv}{Channeli}];% This is a vector of all the offsets of sound extracts in the sequence vv
-                                v_n_list = v_n([ones(length(IndVocStopRaw{vv}{Channeli}),1), 2*ones(length(IndNoiseStopRaw{vv}{Channeli}),1)]); % This is a string array indicating which of the soudns are vocalizations or noise
+                                v_n_list = v_n([ones(1, length(IndVocStopRaw{vv}{Channeli})), 2*ones(1, length(IndNoiseStopRaw{vv}{Channeli}))]); % This is a string array indicating which of the sounds are vocalizations or noise
                                 
                                 % Get audio snippet, filter + center data, then write to file
                                 for ii=1:length(v_n_list) % for each detected sound element
-                                    snippet = WL(starts_list(ii):stops_list(ii));
-                                    FiltWL = filtfilt(sos_high_raw, 1, snippet);
-                                    FiltWL = FiltWL - mean(FiltWL);
-                                    file_name = sprintf('%s__%d_%s_%s_%d.wav', wavsrc(ff).name(1:end-4), vv, type_list(Channeli), v_n_list(ii));
-                                    audiowrite(fullfile(OutputDataPath, file_name), FiltWL, FS)
-                                    
+                                    if stops_list(ii) <= length(WL)
+                                        snippet = WL(starts_list(ii):stops_list(ii));
+                                        FiltWL = filtfilt(sos_high_raw, 1, snippet);
+                                        FiltWL = FiltWL - mean(FiltWL);
+                                        file_name = sprintf('%s__%d_%s_%s_%d.wav', wavsrc(ff).name(1:end-4), vv, type_list(Channeli), v_n_list(ii), ii);
+                                        audiowrite(fullfile(OutputDataPath, file_name), FiltWL, FS)
+                                    end
                                 end
                             end
                         end
