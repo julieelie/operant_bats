@@ -5,11 +5,11 @@ addpath(genpath('/Users/elie/Documents/CODE/SoundAnalysisBats'))
 TranscExtract = 1; % set to 1 to extract logger data and transceiver time
 ForceExtract = 0; % set to 1 to redo the extraction of loggers otherwise the calculations will use the previous extraction data
 ForceAllign = 0; % In case the TTL pulses allignment was already done but you want to do it again, set to 1
-ForceVocExt3 = 1; % Used to patch the error in voc_localize_operant with call already detected issue
+ForceVocExt3 = 0; % Used to patch the error in voc_localize_operant with call already detected issue
 ForceVocExt1 = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
 ForceVocExt2 = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
 ForceWhoID = 0; % In case the identification of bats was already done but you want to re-do it again
-ForceWhat = 0; % In case running biosound was already done but you want to re-do it
+ForceWhat = 1; % In case running biosound was already done but you want to re-do it
 PlotIndivFile = 0; % Set to 1 to plot the sound pressure waveforms of individual detected vocalizations
 close all
 % Get the recording data
@@ -61,8 +61,8 @@ VocId = find(strcmp('Vocalization', Events{EventsEventTypeCol}));
 %% Plot the cumulative number of triggers along time
 fprintf(1,'*** Plotting cumulative events for that day ***\n');
 ColorCode = get(groot,'DefaultAxesColorOrder');
-ReTriggerVocId = find(~isnan(Events{EventsRewardCol}));
-ReVocId = find(~(isnan(Events{EventsRewardCol}) + isinf(Events{EventsRewardCol})));
+ReTriggerVocId = intersect(VocId, find(~isnan(Events{EventsRewardCol})));
+ReVocId = intersect(VocId, find(~(isnan(Events{EventsRewardCol}) + isinf(Events{EventsRewardCol}))));
 
 F=figure(100);
 plot(Events{EventsTimeCol}(VocId)/60,1:length(VocId), 'k-', 'Linewidth',2)
