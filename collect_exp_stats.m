@@ -28,6 +28,7 @@ for bb=1:length(BoxOfInterest) % for each box
         
         % Find corresponding event file and get number of vocalizations
         % TODO: get corresponding file
+%         DataFileStruc = dir(fullfile(BaseDir,sprintf('box%d',BoxOfInterest(bb)), [ParamFilesDir(ff).name(1:16), '*VocTrigger_events.txt'));
 %         Fid_Data = fopen(fullfile(DataFileStruc.folder,DataFileStruc.name));
 %         EventsHeader = textscan(Fid_Data, '%s\t%s\t%s\t%s\t%s\t%s\t%s\n',1);
 %         Events = textscan(Fid_Data, '%s\t%f\t%s\t%s\t%f\t%f\t%f');
@@ -73,9 +74,8 @@ for bb=1:length(BoxOfInterest) % for each box
                 
             end
             try
-                LoggerDataYN = result_operant_bat2(filepath);
                 % prints batIDs, date, time, low threshold, and high threshold
-                fprintf(Fid, '%s\t%s\t%s\t%f\t%f\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),high,low,LoggerDataYN);
+                fprintf(Fid, '%s\t%s\t%s\t%f\t%f\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),high,low);
             catch ME
                 LoggerDataYN = NaN; % Signal error in the processing
                 Ind_ = strfind(ParamFilesDir(ff).name, '_param');
