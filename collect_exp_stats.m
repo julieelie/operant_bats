@@ -47,17 +47,17 @@ for bb=1:length(BoxOfInterest) % for each box
             data = textscan(fid,'%s','Delimiter', '\t');
             fclose(fid);
 
-          % Find corresponding event file and get number of vocalizations
-        % TODO: get corresponding file
+        % Find corresponding event file and get number of vocalizations
         DataFileStruc = dir(fullfile(BaseDir,sprintf('box%d',BoxOfInterest(bb)), 'bataudio', [ParamFilesDir(ff).name(1:16), '*_VocTrigger_events.txt']));
-        % fprintf(1, '%s', DataFileStruc.folder);
-        Fid_Data = fopen(fullfile(DataFileStruc.folder,DataFileStruc.name));
-        EventsHeader = textscan(Fid_Data, '%s\t%s\t%s\t%s\t%s\t%s\t%s\n',1);
-        Events = textscan(Fid_Data, '%s\t%f\t%s\t%s\t%f\t%f\t%f');
-        fclose(Fid_Data);
-        vocID = find(strcmp('Vocalization', Events{4})); % Type column, hard-coded
-        numVocs = length(vocID);
-            
+        numVocs = -1; % set numVocs to < 0 if no data
+        if ~isempty(DataFileStruc) > 0
+            Fid_Data = fopen(fullfile(DataFileStruc.folder,DataFileStruc.name));
+            EventsHeader = textscan(Fid_Data, '%s\t%s\t%s\t%s\t%s\t%s\t%s\n',1);
+            Events = textscan(Fid_Data, '%s\t%f\t%s\t%s\t%f\t%f\t%f');
+            fclose(Fid_Data);
+            vocID = find(strcmp('Vocalization', Events{4})); % Type column, hard-coded
+            numVocs = length(vocID);
+        end
             % FIND THE LINE of your data
             IndexLineHigh = find(contains(data{1}, 'high-pass'));
             IndexLineLow = find(contains(data{1}, 'low-pass'));
