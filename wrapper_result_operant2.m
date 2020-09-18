@@ -2,9 +2,9 @@
 % min.
 OutputDataPath = 'Z:\tobias\vocOperant\Results';
 BaseDir = 'Z:\tobias\vocOperant';
-BoxOfInterest = [3 4 6 8];%[3 4 6 8]
+BoxOfInterest = [3 4 6 8];%[3 4 6 8] %modifty
 ExpLog = fullfile(OutputDataPath, 'VocOperantLogWhoCalls.txt');
-DatesOfInterest = {[]; [190125 190206; 190710 190722]; []; []};
+DatesOfInterest = {[]; [190125 190206; 190710 190722]; []; []}; %modify
 
 if ~exist(ExpLog, 'file')
     Fid = fopen(ExpLog, 'a');
