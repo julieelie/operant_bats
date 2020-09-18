@@ -9,7 +9,7 @@ DataTable = [];
 
 if ~exist(ExpLog, 'file')
     Fid = fopen(ExpLog, 'a');
-    fprintf(Fid, 'File Name (BatID, Date, Time)\tHigh-Pass(Hz)\tLow-Pass(Hz)\tNumVocs\n');
+    fprintf(Fid, 'BatID\tDate\tTime\tHigh-Pass(Hz)\tLow-Pass(Hz)\tNumVocs\n');
     DoneList = [[], [], []];
 else
     Fid = fopen(ExpLog, 'r');
@@ -61,7 +61,7 @@ for bb=1:length(BoxOfInterest) % for each box
             % FIND THE LINE of your data
             IndexLineHigh = find(contains(data{1}, 'high-pass'));
             IndexLineLow = find(contains(data{1}, 'low-pass'));
-            if ~isempty(IndexLineLow) && ~isempty(IndexLineHigh) && numVocs >= 5
+            if ~isempty(IndexLineLow) && ~isempty(IndexLineHigh) 
                 IndexCharHigh = strfind(data{1}{IndexLineHigh},'threshold: ');
                 IndexChar2High = strfind(data{1}{IndexLineHigh},'Hz');
                 % find the data (high threshold) in that line
@@ -72,19 +72,20 @@ for bb=1:length(BoxOfInterest) % for each box
                 % find the data (low threshold) in that line
                 low = str2double(data{1}{IndexLineLow}((IndexChar + 11):(IndexChar2-2)));
 
-                try
-                    % prints batIDs, date, time, low threshold, high threshold, and number of vocalizations
-                    fprintf(Fid, '%s\t%f\t%f\t%d\n',ParamFilesDir(ff).name, high, low, numVocs);
-                catch ME
-                    LoggerDataYN = NaN; % Signal error in the processing
-                    Ind_ = strfind(ParamFilesDir(ff).name, '_param');
-                    fprintf(Fid, '%s\t%s\t%s\t%s\t%f\t%f\t%d\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),high,low,numVocs,LoggerDataYN);
-                    fprintf(1, '%s\t%s\t%s\t%s\t%f\t%f\t%d\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),high,low,numVocs,LoggerDataYN);
-                    ME
-                    for ii=1:length(ME.stack)
-                        ME.stack(ii)
-                    end
+                
+            try
+                % prints batIDs, date, time, low threshold, high threshold, and number of vocalizations
+                fprintf(Fid, '%s\t%s\t%s\t%f\t%f\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),high,low,numVocs);
+            catch ME
+                LoggerDataYN = NaN; % Signal error in the processing
+                Ind_ = strfind(ParamFilesDir(ff).name, '_param');
+                fprintf(Fid, '%s\t%s\t%s\t%s\t%f\t%f\t%d\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),high,low,numVocs,LoggerDataYN);
+                 fprintf(1, '%s\t%s\t%s\t%s\t%f\t%f\t%d\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),high,low,numVocs,LoggerDataYN);
+                ME
+                for ii=1:length(ME.stack)
+                    ME.stack(ii)
                 end
+            end
             end
         end
     end
