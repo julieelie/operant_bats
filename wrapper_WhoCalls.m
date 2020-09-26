@@ -76,7 +76,7 @@ for ff=1:length(name_line)
 %         if ~((strcmp(BatsID, 'TeTa') || strcmp(BatsID, 'TaTe')) && str2double(Date)<190618) % TeTa Bats were doing echolocation calls before June 18th 2019
             Time = f_name(13:16);
             boxID = data{1}{name_line(ff) + 1};
-            %ToDo = find(contains(ToDoList{1},BatsID) .* contains(ToDoList{2},Date) .* contains(ToDoList{3},Time).*logical(ToDoList{6}));
+            ToDo = find(contains(ToDoList{1},BatsID) .* contains(ToDoList{2},Date) .* contains(ToDoList{3},Time).*logical(ToDoList{6}));
             Done = find(contains(DoneList{1},BatsID) .* contains(DoneList{2},Date) .* contains(DoneList{3},Time).*logical(DoneList{6}));
             Crap = find(contains(CrapList{1},BatsID) .* contains(CrapList{2},Date) .* contains(CrapList{3},Time));
             Echo = find(contains(EchoList{1},BatsID) .* contains(EchoList{2},Date) .* contains(EchoList{3},Time));
