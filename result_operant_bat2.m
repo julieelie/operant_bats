@@ -1,10 +1,9 @@
 function [LoggerDataYN]=result_operant_bat2(Path2ParamFile, Logger_dir)
 %% !!! CHANGE TO ADAPT TO COMPUTER
-% **Modify file paths for chiro
-OutputDataPath = 'Z:\tobias\vocOperant\Results';
-PathToGithubFolder = 'C:\Users\Eva\Documents\GitHub';
-Path2LocalDocuments = 'C:\Users\Eva\Documents';
-EventFileExe = 'C:\Users\Eva\Documents\MATLAB\EventFileReader_6_2\Event_File_Reader_6_2.exe';
+OutputDataPath = 'Z:\users\tobias\vocOperant\Results';
+PathToGithubFolder = 'C:\Users\tobias\Documents\GitHub';
+Path2LocalDocuments = 'C:\Users\tobias\Documents';
+EventFileExe = 'C:\Users\tobias\Documents\GitHub\operant_bats\EventFileReader\EventFileReader';
 % Set the path to a working directory on the computer so logger data are
 % transfered there and directly accessible for calculations
 FileBatList = fullfile(OutputDataPath,'BatList.txt');
