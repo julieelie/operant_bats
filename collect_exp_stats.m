@@ -5,16 +5,15 @@ BaseDir = 'Z:\users\tobias\vocOperant';
 BoxOfInterest = [1 2 3 4 5 6 7 8];
 ExpLog = fullfile(OutputDataPath, 'VocOperantData.txt');
 DataTable = [];
-% DatesOfInterest = {[]; [190125 190206; 190710 190722]; []; []};
 
 if ~exist(ExpLog, 'file')
     Fid = fopen(ExpLog, 'a');
-    fprintf(Fid, 'File Name (BatID, Date, Time)\tHigh-Pass(Hz)\tLow-Pass(Hz)\tNumVocs\n');
-    DoneList = [[], [], []];
+    fprintf(Fid, 'File Name (BatID, Date, Time)\tBoxNum\tHigh-Pass(Hz)\tLow-Pass(Hz)\tNumVocs\n');
+    DoneList = [[], [], [], []];
 else
     Fid = fopen(ExpLog, 'r');
-    Header = textscan(Fid,'%s\t%s\t%s\t%s\t%s\t%s\n');
-    DoneList = textscan(Fid,'%s\t%s\t%s\t%s\t%.1f\t%d');
+    Header = textscan(Fid,'%s\t%s\t%s\t%s\t%s\n');
+    DoneList = textscan(Fid,'%s\t%s\t%s\t%.1f\t%d');
     fclose(Fid);
     Fid = fopen(ExpLog, 'a');
     
@@ -72,9 +71,10 @@ for bb=1:length(BoxOfInterest) % for each box
                 % find the data (low threshold) in that line
                 low = str2double(data{1}{IndexLineLow}((IndexChar + 11):(IndexChar2-2)));
 
+                boxID = BoxOfInterest(bb);
                 try
                     % prints batIDs, date, time, low threshold, high threshold, and number of vocalizations
-                    fprintf(Fid, '%s\t%f\t%f\t%d\n',ParamFilesDir(ff).name, high, low, numVocs);
+                    fprintf(Fid, '%s\t%d\t%f\t%f\t%d\n',ParamFilesDir(ff).name, boxID, high, low, numVocs);
                 catch ME
                     LoggerDataYN = NaN; % Signal error in the processing
                     Ind_ = strfind(ParamFilesDir(ff).name, '_param');

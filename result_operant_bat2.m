@@ -1,5 +1,6 @@
 function [LoggerDataYN]=result_operant_bat2(Path2ParamFile, Logger_dir)
 %% !!! CHANGE TO ADAPT TO COMPUTER
+% **Modify file paths for chiro
 OutputDataPath = 'Z:\tobias\vocOperant\Results';
 PathToGithubFolder = 'C:\Users\Eva\Documents\GitHub';
 Path2LocalDocuments = 'C:\Users\Eva\Documents';

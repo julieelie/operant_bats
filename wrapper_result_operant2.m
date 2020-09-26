@@ -2,7 +2,7 @@
 % min.
 OutputDataPath = 'Z:\tobias\vocOperant\Results';
 BaseDir = 'Z:\tobias\vocOperant';
-BoxOfInterest = [3 4 6 8];%[3 4 6 8] %modifty
+BoxOfInterest = [3 4 6 8];%[3 4 6 8] % only boxes with piezo
 ExpLog = fullfile(OutputDataPath, 'VocOperantLogWhoCalls.txt');
 DatesOfInterest = {[]; [190125 190206; 190710 190722]; []; []}; %modify
 
@@ -19,7 +19,7 @@ else
     
 end
 
-for bb=2:length(BoxOfInterest)
+for bb=1:length(BoxOfInterest)
     ParamFilesDir = dir(fullfile(BaseDir,sprintf('box%d',BoxOfInterest(bb)),'bataudio','*_VocTrigger_param.txt'));
     for ff=1:length(ParamFilesDir)
         filepath = fullfile(ParamFilesDir(ff).folder, ParamFilesDir(ff).name);
