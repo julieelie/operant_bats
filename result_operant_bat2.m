@@ -3,7 +3,7 @@ function [LoggerDataYN]=result_operant_bat2(Path2ParamFile, Logger_dir)
 OutputDataPath = 'Z:\users\tobias\vocOperant\Results';
 PathToGithubFolder = 'C:\Users\tobias\Documents\GitHub';
 Path2LocalDocuments = 'C:\Users\tobias\Documents';
-EventFileExe = 'C:\Users\tobias\Documents\GitHub\operant_bats\EventFileReader\EventFileReader';
+EventFileExe = 'C:\Users\tobias\Documents\GitHub\operant_bats\Event_File_Reader_7_2_exe_64bit\Event_File_Reader_7_2.exe';
 % Set the path to a working directory on the computer so logger data are
 % transfered there and directly accessible for calculations
 FileBatList = fullfile(OutputDataPath,'BatList.txt');
