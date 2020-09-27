@@ -2,7 +2,7 @@
 % min.
 OutputDataPath = 'Z:\users\tobias\vocOperant\Results';
 BaseDir = 'Z:\users\tobias\vocOperant';
-BoxOfInterest = [3 4 6 8]; % these are the only boxes with piezo recordings
+BoxOfInterest = ['3' '4' '6' '8']; % these are the only boxes with piezo recordings
 ExpLog = fullfile(OutputDataPath, 'VocOperantLogWhoCalls.txt');
 % DatesOfInterest = {[]; [190125 190206; 190710 190722]; []; []}; %modify
 
@@ -28,9 +28,9 @@ name_line = find(contains(data{1}, 'VocTrigger'));
 for ff=1:length(name_line)
     boxID = data{1}{name_line(ff) + 1};
     f_name = data{1}{name_line(ff)};
-    ParamFilesDir = dir(fullfile(BaseDir, 'Exp_Stats', f_name));
-    filepath = fullfile(BaseDir, 'Exp_Stats', f_name);
-    fprintf(1,'\n\n\nBox %d, file %d/%d:\n%s\n',boxID,ff,length(name_line),filepath)
+    ParamFilesDir = dir(fullfile(BaseDir, strcat('box', boxID), 'bataudio', f_name));
+    filepath = fullfile(BaseDir, strcat('box', boxID), 'bataudio', f_name);
+    fprintf(1,'\n\n\nBox %s, file %d/%d:\n%s\n',boxID,ff,length(name_line),filepath)
     BatsID = f_name(1:4);
     Date = f_name(6:11);
     Time = f_name(13:16);
