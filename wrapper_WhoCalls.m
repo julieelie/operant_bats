@@ -60,6 +60,7 @@ fid = fopen('Z:\users\tobias\vocOperant\Exp_Stats\VocOperantData.txt');
 data = textscan(fid,'%s','Delimiter', '\t');
 fclose(fid);
 name_line = find(contains(data{1}, 'VocTrigger'));
+box_line = find(contains(data{1}, 'box'));
 
 for ff=1:length(name_line)
     f_name = data{1}{name_line(ff)};
@@ -75,7 +76,7 @@ for ff=1:length(name_line)
 %     if (sum(contains(PriorityPairs1, BatsID)) && (str2double(Date)>PriorityDates1(1)) && (str2double(Date)<PriorityDates1(2))) || (sum(contains(PriorityPairs2, BatsID)) && (str2double(Date)>PriorityDates2(1)) && (str2double(Date)<PriorityDates2(2)))
 %         if ~((strcmp(BatsID, 'TeTa') || strcmp(BatsID, 'TaTe')) && str2double(Date)<190618) % TeTa Bats were doing echolocation calls before June 18th 2019
             Time = f_name(13:16);
-            boxID = data{1}{name_line(ff) + 1};
+            boxID = data{1}{box_line(ff)};
             ToDo = find(contains(ToDoList{1},BatsID) .* contains(ToDoList{2},Date) .* contains(ToDoList{3},Time).*logical(ToDoList{6}));
             Done = find(contains(DoneList{1},BatsID) .* contains(DoneList{2},Date) .* contains(DoneList{3},Time).*logical(DoneList{6}));
             Crap = find(contains(CrapList{1},BatsID) .* contains(CrapList{2},Date) .* contains(CrapList{3},Time));
@@ -88,8 +89,8 @@ for ff=1:length(name_line)
                     continue
                 else
                     % Temp = ToDoList{5}(ToDo);
-                    fprintf(1,'*** Check the clock drift correction of the logger ***\n')
-                    LoggerPath = fullfile(BaseDir,sprintf('box%d',boxID),'piezo',Date,'audiologgers');
+                    fprintf(1,'*** Check the clock drift correction of the logger ***%d\n', boxID)
+                    LoggerPath = fullfile(BaseDir,boxID,'piezo',Date,'audiologgers');
                     LoggersDir = dir(fullfile(LoggerPath, 'logger*'));
                     Check = zeros(length(LoggersDir)+1,1);
                     if ~isempty(LoggersDir)
