@@ -21,75 +21,78 @@ end
 
 % Retrieve names of files with good quality data
 fid = fopen('Z:\users\tobias\vocOperant\Exp_Stats\VocOperantData.txt');
-data = textscan(fid,'%s','Delimiter', '\t');
+good_data = textscan(fid,'%s','Delimiter', '\t');
 fclose(fid);
-name_line = find(contains(data{1}, 'VocTrigger'));
+name_line = find(contains(good_data{1}, 'VocTrigger'));
+box_line = find(contains(good_data{1}, 'box'));
 
-for ff=1:length(name_line)
-    boxID = data{1}{name_line(ff) + 1};
-    f_name = data{1}{name_line(ff)};
-    ParamFilesDir = dir(fullfile(BaseDir, strcat('box', boxID), 'bataudio', f_name));
-    filepath = fullfile(BaseDir, strcat('box', boxID), 'bataudio', f_name);
-    fprintf(1,'\n\n\nBox %s, file %d/%d:\n%s\n',boxID,ff,length(name_line),filepath)
-    BatsID = f_name(1:4);
-    Date = f_name(6:11);
-    Time = f_name(13:16);
-    % Check that the file was not already treated
-    Done = sum(contains(DoneList{1},BatsID) .* contains(DoneList{2},Date) .* contains(DoneList{3},Time));
-    toDo = 0;
-    
-    if Done
-        fprintf(1, '   -> Data already processed\n')
-        continue
-    end
-    if ismember(boxID,BoxOfInterest)
-        toDo = 1;
-    end
-    % Use when looking at speciic dates/boxes rather than a pre-selected
-    % set of files:
-    %         boxDates = DatesOfInterest{bb};
-    %         for ddRow=1:size(boxDates,1)
-    %             startDate = boxDates(ddRow,1);
-    %             endDate = boxDates(ddRow ,2);
-    %             if (str2double(Date) >= startDate) && (str2double(Date) <= endDate)
-    %                 toDo = 1;
-    %             end
-    %         end
-    
-    if toDo ~= 0
-        % check that the experiment has data!~
-        fid = fopen(filepath);
-        data = textscan(fid,'%s','Delimiter', '\t');
-        fclose(fid);
+if ~isempty(name_line)
+    for ff=1:length(name_line)
+        f_name = good_data{1}{name_line(ff)};
+        boxID = good_data{1}{box_line(ff)};
+        ParamFilesDir = dir(fullfile(BaseDir, boxID, 'bataudio', f_name));
+        filepath = fullfile(BaseDir, boxID, 'bataudio', f_name);
+        fprintf(1,'\n\n\n%s, file %d/%d:\n%s\n',boxID,ff,length(name_line),filepath)
+        BatsID = f_name(1:4);
+        Date = f_name(6:11);
+        Time = f_name(13:16);
+        % Check that the file was not already treated
+        Done = sum(contains(DoneList{1},BatsID) .* contains(DoneList{2},Date) .* contains(DoneList{3},Time));
+        toDo = 0;
         
-        % FIND THE LINE of your data
-        IndexLine = find(contains(data{1}, 'Task stops at'));
-        if ~isempty(IndexLine)
-            IndexChar = strfind(data{1}{IndexLine},'after');
-            IndexChar2 = strfind(data{1}{IndexLine},'seconds');
+        if Done
+            fprintf(1, '   -> Data already processed\n')
+            continue
+        end
+        if ismember(boxID(4),BoxOfInterest)
+            toDo = 1;
+        end
+        % Use when looking at speciic dates/boxes rather than a pre-selected
+        % set of files:
+        %         boxDates = DatesOfInterest{bb};
+        %         for ddRow=1:size(boxDates,1)
+        %             startDate = boxDates(ddRow,1);
+        %             endDate = boxDates(ddRow ,2);
+        %             if (str2double(Date) >= startDate) && (str2double(Date) <= endDate)
+        %                 toDo = 1;
+        %             end
+        %         end
+        
+        if toDo ~= 0
+            % check that the experiment has data!~
+            fid = fopen(filepath);
+            data = textscan(fid,'%s','Delimiter', '\t');
+            fclose(fid);
             
-            % find the data into that line
-            Temp = str2double(data{1}{IndexLine}((IndexChar + 6):(IndexChar2-2)));
-            if Temp<600
-                continue
+            % FIND THE LINE of your data
+            IndexLine = find(contains(data{1}, 'Task stops at'));
+            if ~isempty(IndexLine)
+                IndexChar = strfind(data{1}{IndexLine},'after');
+                IndexChar2 = strfind(data{1}{IndexLine},'seconds');
+                
+                % find the data into that line
+                Temp = str2double(data{1}{IndexLine}((IndexChar + 6):(IndexChar2-2)));
+                if Temp<600
+                    continue
+                end
             end
-        end
-        try
-            LoggerDataYN = result_operant_bat2(filepath);
-            Ind_ = strfind(ParamFilesDir(ff).name, '_param');
-            fprintf(Fid, '%s\t%s\t%s\t%s\t%.1f\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),Temp,LoggerDataYN);
-        catch ME
-            LoggerDataYN = NaN; % Signal error in the processing
-            Ind_ = strfind(ParamFilesDir(ff).name, '_param');
-            fprintf(Fid, '%s\t%s\t%s\t%s\t%.1f\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),Temp,LoggerDataYN);
-            fprintf(1, '%s\t%s\t%s\t%s\t%.1f\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),Temp,LoggerDataYN);
-            ME
-            for ii=1:length(ME.stack)
-                ME.stack(ii)
+            try
+                LoggerDataYN = result_operant_bat2(filepath);
+                %Ind_ = strfind(ParamFilesDir(ff).name, '_param');
+                fprintf(Fid, '%s\t%s\t%s\t%s\t%.1f\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:length(ParamFilesDir(ff).name)-4),Temp,LoggerDataYN);
+            catch ME
+                LoggerDataYN = NaN; % Signal error in the processing
+                %Ind_ = strfind(ParamFilesDir(ff).name, '_param');
+                fprintf(Fid, '%s\t%s\t%s\t%s\t%.1f\t%d\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN);
+                fprintf(1, '%s\t%s\t%s\t%s\t%.1f\t%d\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN);
+                ME
+                for ii=1:length(ME.stack)
+                    ME.stack(ii)
+                end
             end
+        else
+            fprintf(1,'   -> This date is not a priority\n')
         end
-    else
-        fprintf(1,'   -> This date is not a priority\n')
     end
 end
 if ishandle(Fid)
