@@ -74,7 +74,7 @@ for bb=1:length(BoxOfInterest) % for each box
                 boxID = BoxOfInterest(bb);
                 try
                     % prints batIDs, date, time, low threshold, high threshold, and number of vocalizations
-                    fprintf(Fid, '%s\t%d\t%f\t%f\t%d\n',ParamFilesDir(ff).name, boxID, high, low, numVocs);
+                    fprintf(Fid, '%s\t%s%d\t%f\t%f\t%d\n',ParamFilesDir(ff).name, 'box', boxID, high, low, numVocs);
                 catch ME
                     LoggerDataYN = NaN; % Signal error in the processing
                     Ind_ = strfind(ParamFilesDir(ff).name, '_param');
