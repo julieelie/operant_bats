@@ -13,7 +13,7 @@ if ~exist(ExpLog, 'file')
 else
     Fid = fopen(ExpLog, 'r');
     Header = textscan(Fid,'%s\t%s\t%s\t%s\t%s\t%s\n');
-    DoneList = textscan(Fid,'%s\t%s\t%s\t%s\t%.1f\t%d');
+    DoneList = textscan(Fid,'%s\t%s\t%s\t%s\t%s\t%s\n'); % formerly '%s\t%s\t%s\t%s\t%.1f\t%d\n'
     fclose(Fid);
     Fid = fopen(ExpLog, 'a');
     
@@ -30,8 +30,8 @@ if ~isempty(name_line)
     for ff=1:length(name_line)
         f_name = good_data{1}{name_line(ff)};
         boxID = good_data{1}{box_line(ff)};
-        ParamFilesDir = dir(fullfile(BaseDir, boxID, 'bataudio', f_name));
-        filepath = fullfile(BaseDir, boxID, 'bataudio', f_name);
+        % ParamFilesDir = dir(fullfile(BaseDir, boxID, 'bataudio', f_name));
+        filepath = fullfile(BaseDir, boxID, 'bataudio', f_name); %fullfile(ParamFilesDir(ff).folder, ParamFilesDir(ff).name);
         fprintf(1,'\n\n\n%s, file %d/%d:\n%s\n',boxID,ff,length(name_line),filepath)
         BatsID = f_name(1:4);
         Date = f_name(6:11);
@@ -78,13 +78,13 @@ if ~isempty(name_line)
             end
             try
                 LoggerDataYN = result_operant_bat2(filepath);
-                %Ind_ = strfind(ParamFilesDir(ff).name, '_param');
-                fprintf(Fid, '%s\t%s\t%s\t%s\t%.1f\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:length(ParamFilesDir(ff).name)-4),Temp,LoggerDataYN);
+                fprintf(Fid, '%s\t%s\t%s\t%s\t%s\t%s\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN);
+                % ^ formerly '%s\t%s\t%s\t%s\t%.1f\t%d\n'
             catch ME
                 LoggerDataYN = NaN; % Signal error in the processing
                 %Ind_ = strfind(ParamFilesDir(ff).name, '_param');
-                fprintf(Fid, '%s\t%s\t%s\t%s\t%.1f\t%d\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN);
-                fprintf(1, '%s\t%s\t%s\t%s\t%.1f\t%d\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN);
+                fprintf(Fid, '%s\t%s\t%s\t%s\t%s\t%s\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN);
+                fprintf(1, '%s\t%s\t%s\t%s\t%s\t%s\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN);
                 ME
                 for ii=1:length(ME.stack)
                     ME.stack(ii)
