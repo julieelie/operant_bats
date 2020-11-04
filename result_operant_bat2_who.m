@@ -17,6 +17,7 @@ UseOld = 1; % Set to 1 if you want to use old data in Who calls
 close all
 % Get the recording data
 [AudioDataPath, DataFile ,~]=fileparts(Path2ParamFile);
+fprintf(1, '%s', DataFile)
 Date = DataFile(6:11);
 ExpStartTime = DataFile(13:16);
 
