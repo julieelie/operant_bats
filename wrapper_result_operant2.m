@@ -4,7 +4,6 @@ OutputDataPath = 'Z:\users\tobias\vocOperant\Results';
 BaseDir = 'Z:\users\tobias\vocOperant';
 BoxOfInterest = ['3' '4' '6' '8']; % these are the only boxes with piezo recordings
 ExpLog = fullfile(OutputDataPath, 'VocOperantLogWhoCalls.txt');
-% DatesOfInterest = {[]; [190125 190206; 190710 190722]; []; []}; %modify
 
 if ~exist(ExpLog, 'file')
     Fid = fopen(ExpLog, 'a');
