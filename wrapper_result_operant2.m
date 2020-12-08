@@ -7,12 +7,12 @@ ExpLog = fullfile(OutputDataPath, 'VocOperantLogWhoCalls.txt');
 
 if ~exist(ExpLog, 'file')
     Fid = fopen(ExpLog, 'a');
-    fprintf(Fid, 'Subject\tDate\tTime\tType\tDuration(s)\tLoggerData\n');
+    fprintf(Fid, 'Subject\tDate\tTime\tType\tDuration(s)\tLoggerData\tBox\n');
     DoneList = [];
 else
     Fid = fopen(ExpLog, 'r');
-    Header = textscan(Fid,'%s\t%s\t%s\t%s\t%s\t%s\n');
-    DoneList = textscan(Fid,'%s\t%s\t%s\t%s\t%s\t%s\n'); % formerly '%s\t%s\t%s\t%s\t%.1f\t%d\n'
+    Header = textscan(Fid,'%s\t%s\t%s\t%s\t%s\t%s\t%s\n');
+    DoneList = textscan(Fid,'%s\t%s\t%s\t%s\t%s\t%s\t%s\n'); % formerly '%s\t%s\t%s\t%s\t%.1f\t%d\n'
     fclose(Fid);
     Fid = fopen(ExpLog, 'a');
     
@@ -76,14 +76,14 @@ if ~isempty(name_line)
                 end
             end
             try
-                LoggerDataYN = result_operant_bat2(filepath);
-                fprintf(Fid, '%s\t%s\t%s\t%s\t%s\t%s\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN);
+                LoggerDataYN = num2str(double(result_operant_bat2(filepath)));
+                fprintf(Fid, '%s\t%s\t%s\t%s\t%s\t%s\t%s\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN, boxID);
                 % ^ formerly '%s\t%s\t%s\t%s\t%.1f\t%d\n'
             catch ME
                 LoggerDataYN = NaN; % Signal error in the processing
                 %Ind_ = strfind(ParamFilesDir(ff).name, '_param');
-                fprintf(Fid, '%s\t%s\t%s\t%s\t%s\t%s\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN);
-                fprintf(1, '%s\t%s\t%s\t%s\t%s\t%s\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN);
+                fprintf(Fid, '%s\t%s\t%s\t%s\t%s\t%s\t%s\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN, boxID);
+                fprintf(1, '%s\t%s\t%s\t%s\t%s\t%s\t%s\n',f_name(1:4),f_name(6:11),f_name(13:16),f_name(18:length(f_name)-4),Temp,LoggerDataYN, boxID);
                 ME
                 for ii=1:length(ME.stack)
                     ME.stack(ii)

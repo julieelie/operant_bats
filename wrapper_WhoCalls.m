@@ -5,12 +5,13 @@ BaseDir = 'Z:\users\tobias\vocOperant';
 % BoxOfInterest = [3 4 6 8];
 % PriorityPairs1 = {'TaTe' 'TeTa' 'TiTo' 'ToTi' 'TuTy' 'TyTu' 'TwTr' 'TrTw'};
 % PriorityDates1 = [180926 190826];
-% PriorityPairs2 = {'ClEn' 'EnCl' 'CoEd' 'EdCo' 'EzEl' 'ElEz' 'HaHo' 'HoHa'};
-% PriorityDates2 = [161122 190603];
-ExpLog = fullfile(OutputDataPath, 'VocOperantLogWhoCallsNew.txt');
-WhoLog = fullfile(OutputDataPath, 'VocOperantLogWhoCallsDoneNew.txt');
-CheckAllignmentLog = fullfile(OutputDataPath, 'VocOperantLogCheckAllignementNew.txt');
-TrashEcholocationCalls = fullfile(OutputDataPath, 'VocOperantLogEcholocationNew.txt');
+% PriorityPairs2 = {'ClEn' 'EnCl' 'CoEd' 'EdCo' 'EzEl' 'ElEz' 'HaHo'
+% 'HoHa'};.
+% PriorityDaktes2 = [161122 190603];
+ExpLog = fullfile(OutputDataPath, 'VocOperantLogWhoCalls.txt');
+WhoLog = fullfile(OutputDataPath, 'VocOperantLogWhoCallsDone.txt');
+CheckAllignmentLog = fullfile(OutputDataPath, 'VocOperantLogCheckAllignement.txt');
+TrashEcholocationCalls = fullfile(OutputDataPath, 'VocOperantLogEcholocation.txt');
 
 FidExp = fopen(ExpLog, 'r');
 Header = textscan(FidExp,'%s\t%s\t%s\t%s\t%s\t%s\n');
@@ -71,7 +72,7 @@ for ff=1:length(name_line)
     ParamFilesDir = dir(fullfile(BaseDir, boxID, 'bataudio', f_name));
     filepath = fullfile(BaseDir, boxID, 'bataudio', f_name);
     fprintf(1,'file %d/%d:\n%s\n', ff, length(name_line),filepath)
-    % Check if that file is on the
+    % Check if that file is on the\
     % priority list! then on the ToDo list (list of data that has
     % already been extracted by wrapper_result_operant2), if it's been
     % already done or labbeled as crappy.
