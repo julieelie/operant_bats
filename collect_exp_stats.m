@@ -1,51 +1,45 @@
-% NOTE: We are focusing on VocTrigger experiments that are longer than 10
+% This script gather all the VocTrigger experiments longer than 10min
+% NOTE: We are focusing on VocTrigger experiments that are longer than 5
 % min.
+MinVoc = 5;
 OutputDataPath = 'Z:\users\tobias\vocOperant\Exp_Stats';
 BaseDir = 'Z:\users\tobias\vocOperant';
 BoxOfInterest = [1 2 3 4 5 6 7 8];
 ExpLog = fullfile(OutputDataPath, 'VocOperantData.txt');
-DataTable = [];
 
-if ~exist(ExpLog, 'file')
-    Fid = fopen(ExpLog, 'a');
-    fprintf(Fid, 'File Name (BatID, Date, Time)\tBoxNum\tHigh-Pass(Hz)\tLow-Pass(Hz)\tNumVocs\n');
-    DoneList = [[], [], [], []];
-else
-    Fid = fopen(ExpLog, 'r');
-    Header = textscan(Fid,'%s\t%s\t%s\t%s\t%s\n');
-    DoneList = textscan(Fid,'%s\t%s\t%s\t%.1f\t%d');
-    fclose(Fid);
-    Fid = fopen(ExpLog, 'a');
-    
-end
+Fid = fopen(ExpLog, 'w');
+fprintf(Fid, 'FileName\tBoxNum\tHigh-Pass(Hz)\tLow-Pass(Hz)\tNumVocs\tDuration(min)\n');
+
 
 for bb=1:length(BoxOfInterest) % for each box
     ParamFilesDir = dir(fullfile(BaseDir,sprintf('box%d',BoxOfInterest(bb)),'bataudio','*_VocTrigger_param.txt'));
-    EventFilesDir = dir(fullfile(BaseDir,sprintf('box%d',BoxOfInterest(bb)),'bataudio','*_VocTrigger_events.txt'));
     
     for ff=1:length(ParamFilesDir)
         
-        filepath = fullfile(ParamFilesDir(ff).folder, ParamFilesDir(ff).name);
-        fprintf(1,'\n\n\nBox %d (%d/%d), file %d/%d:\n%s\n',BoxOfInterest(bb),bb,length(BoxOfInterest),ff,length(ParamFilesDir),filepath)
-        % Check that the file was not already treated
-        BatsID = ParamFilesDir(ff).name(1:4);
-        Date = ParamFilesDir(ff).name(6:11);
-        Time = ParamFilesDir(ff).name(13:16);
-        Done = sum(contains(DoneList{1},BatsID) .* contains(DoneList{2},Date) .* contains(DoneList{3},Time));
-        % boxDates = DatesOfInterest{bb};
-        toDo = 1;
-        if Done
-            fprintf(1, '   -> Data already processed\n')
-            toDo = 0;
+        Filepath = fullfile(ParamFilesDir(ff).folder, ParamFilesDir(ff).name);
+        fprintf(1,'\n\n\nBox %d (%d/%d), file %d/%d:\n%s\n',BoxOfInterest(bb),bb,length(BoxOfInterest),ff,length(ParamFilesDir),Filepath)
+        
+        
+        % check that the experiment has data!
+        fid = fopen(Filepath);
+        data = textscan(fid,'%s','Delimiter', '\t');
+        fclose(fid);
+        IndexLine = find(contains(data{1}, 'Task stops at'));
+        if ~isempty(IndexLine)
+            IndexChar = strfind(data{1}{IndexLine},'after');
+            IndexChar2 = strfind(data{1}{IndexLine},'seconds');
+            
+            % find the data into that line
+            Temp = round(str2double(data{1}{IndexLine}((IndexChar + 6):(IndexChar2-2)))/60);% duration in min
+        else %No stop line, estimate the duration of the experiment by looking at the number of microphone files
+            MicFiles = dir(fullfile(ParamFilesDir(ff).folder, [ParamFilesDir(ff).name(1:25) 'mic1*']));
+            Temp = (length(MicFiles)-1)*10;
+        end
+        if Temp<10
+            fprintf(1, '   -> Data too short\n')
             continue
         end
         
-        if toDo ~= 0
-            % check that the experiment has data!
-            fid = fopen(filepath);
-            data = textscan(fid,'%s','Delimiter', '\t');
-            fclose(fid);
-
         % Find corresponding event file and get number of vocalizations
         DataFileStruc = dir(fullfile(BaseDir,sprintf('box%d',BoxOfInterest(bb)), 'bataudio', [ParamFilesDir(ff).name(1:16), '*_VocTrigger_events.txt']));
         numVocs = -1; % set numVocs to < 0 if no data
@@ -56,35 +50,29 @@ for bb=1:length(BoxOfInterest) % for each box
             fclose(Fid_Data);
             vocID = find(strcmp('Vocalization', Events{4})); % Type column, hard-coded
             numVocs = length(vocID);
+        else
+            keyboard
         end
-            % FIND THE LINE of your data
-            IndexLineHigh = find(contains(data{1}, 'high-pass'));
-            IndexLineLow = find(contains(data{1}, 'low-pass'));
-            if ~isempty(IndexLineLow) && ~isempty(IndexLineHigh) && numVocs >= 5
-                IndexCharHigh = strfind(data{1}{IndexLineHigh},'threshold: ');
-                IndexChar2High = strfind(data{1}{IndexLineHigh},'Hz');
-                % find the data (high threshold) in that line
-                high = str2double(data{1}{IndexLineHigh}((IndexCharHigh + 11):(IndexChar2High-2)));
-                
-                IndexChar = strfind(data{1}{IndexLineLow},'threshold: ');
-                IndexChar2 = strfind(data{1}{IndexLineLow},'Hz');
-                % find the data (low threshold) in that line
-                low = str2double(data{1}{IndexLineLow}((IndexChar + 11):(IndexChar2-2)));
-
-                boxID = BoxOfInterest(bb);
-                try
-                    % prints batIDs, date, time, low threshold, high threshold, and number of vocalizations
-                    fprintf(Fid, '%s\t%s%d\t%f\t%f\t%d\n',ParamFilesDir(ff).name, 'box', boxID, high, low, numVocs);
-                catch ME
-                    LoggerDataYN = NaN; % Signal error in the processing
-                    Ind_ = strfind(ParamFilesDir(ff).name, '_param');
-                    fprintf(Fid, '%s\t%s\t%s\t%s\t%f\t%f\t%d\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),high,low,numVocs,LoggerDataYN);
-                    fprintf(1, '%s\t%s\t%s\t%s\t%f\t%f\t%d\t%d\n',ParamFilesDir(ff).name(1:4),ParamFilesDir(ff).name(6:11),ParamFilesDir(ff).name(13:16),ParamFilesDir(ff).name(18:(Ind_-1)),high,low,numVocs,LoggerDataYN);
-                    ME
-                    for ii=1:length(ME.stack)
-                        ME.stack(ii)
-                    end
-                end
+        % FIND the low pass and high pass filters applied
+        IndexLineHigh = find(contains(data{1}, 'high-pass'));
+        IndexLineLow = find(contains(data{1}, 'low-pass'));
+        if ~isempty(IndexLineLow) && ~isempty(IndexLineHigh) && numVocs >= MinVoc
+            IndexCharHigh = strfind(data{1}{IndexLineHigh},'threshold: ');
+            IndexChar2High = strfind(data{1}{IndexLineHigh},'Hz');
+            % find the data (high threshold) in that line
+            high = str2double(data{1}{IndexLineHigh}((IndexCharHigh + 11):(IndexChar2High-2)));
+            
+            IndexChar = strfind(data{1}{IndexLineLow},'threshold: ');
+            IndexChar2 = strfind(data{1}{IndexLineLow},'Hz');
+            % find the data (low threshold) in that line
+            low = str2double(data{1}{IndexLineLow}((IndexChar + 11):(IndexChar2-2)));
+            
+            boxID = BoxOfInterest(bb);
+            try
+                % prints batIDs, date, time, low threshold, high threshold, and number of vocalizations
+                fprintf(Fid, '%s\t%s%d\t%f\t%f\t%d\t%d\n',ParamFilesDir(ff).name, 'box', boxID, high, low, numVocs, Temp);
+            catch
+                keyboard
             end
         end
     end
