@@ -10,7 +10,11 @@ BoxOfInterest = [1 2 3 4 5 6 7 8];
 ExpLog = fullfile(OutputDataPath, 'VocOperantData.txt');
 AllLog = fullfile(OutputDataPath, 'VocOperantAllData.txt');
 delete(fullfile(OutputDataPath, 'StatsDiary.txt'));
-diary(fullfile(OutputDataPath, sprintf('StatsDiary_%s.txt', date)));
+Today = datetime;
+diary(fullfile(OutputDataPath, sprintf('StatsDiary_%s_%d%d.txt', date,Today.Hour,Today.Minute)));
+
+%% This first part go through all files and create the full list of all experiments and the list of experiment to extract
+% You don't want to rerun this
 AllExpCount = 0;
 ExpMissMicDataCount = 0;
 ExpTooShortCount = 0;
@@ -128,7 +132,6 @@ fprintf(1, 'Experiments with Mic data, longer that %d min that have too few call
 fprintf(1, 'Experiments with Mic data, longer that %d min, with >= %d calls that have no logger data: %d/%d, %d%%\n',MinDur, MinVoc,ExpMissLogDataCount, AllExpCount-ExpMissMicDataCount-ExpTooShortCount-ExpTooFewCallsCount, round(ExpMissLogDataCount*100/(AllExpCount-ExpMissMicDataCount-ExpTooShortCount-ExpTooFewCallsCount)))
 TotCleanExp = AllExpCount-ExpMissMicDataCount-ExpTooShortCount-ExpTooFewCallsCount-ExpMissLogDataCount;
 fprintf(1, 'total number of clean experiments to process: %d\n', TotCleanExp)
-diary OFF
 
 %% Stats of number fo experiments that went through vocalization detection
 BaseDataDir = 'Z:\users\tobias\vocOperant';
@@ -238,7 +241,7 @@ for ee=1:length(CuratedExp.Subject)
 end
 fprintf(1, 'Total number of sequences with vocalizations %d/%d, %d%%\n', sum(CuratedExp.NumFullSeq),sum(CuratedExp.NumSeq),round(sum(CuratedExp.NumFullSeq)*100/sum(CuratedExp.NumSeq)))
 fprintf(1, 'Total number of vocalizations %d\n', sum(CuratedExp.NumVoc))
-
+diary OFF
 %% Some figures
 SubjectsID = unique(CuratedExp.Subject);
 HighLowID = unique(CuratedExp.HighLow);
