@@ -168,6 +168,9 @@ if TranscExtract && LoggerDataYN
             % Bring data back on the computer
             Logger_local = fullfile(WorkDir, All_loggers_dir(ll).name);
             fprintf(1,'Transferring data from the server %s\n on the local computer %s\n', Logger_i, Logger_local);
+            if exist(Logger_local, 'dir')
+                rmdir(Logger_local, 's')
+            end
             mkdir(Logger_local)
             [s,m,e]=copyfile(Logger_i, Logger_local, 'f');
             if ~s
@@ -275,7 +278,7 @@ if TranscExtract && LoggerDataYN
     
     %% Identify the same vocalizations on the piezos and save sound extracts, onset and offset times
     fprintf('*** LOCALIZING VOCALIZATIONS ON PIEZO RECORDINGS ***\n')
-    LogVoc_dir = dir(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData.mat', Date, ExpStartTime)));
+    LogVoc_dir = dir(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData*.mat', Date, ExpStartTime)));
     if isempty(LogVoc_dir) || ForceVocExt1 || ForceVocExt2
         get_logger_data_voc(AudioDataPath, Logger_dir,Date, ExpStartTime, 'SerialNumber',Logger_num,'ReAllignment',0);
     else
