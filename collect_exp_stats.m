@@ -9,7 +9,7 @@ BaseDir = 'Z:\users\tobias\vocOperant';
 BoxOfInterest = [1 2 3 4 5 6 7 8];
 ExpLog = fullfile(OutputDataPath, 'VocOperantData.txt');
 AllLog = fullfile(OutputDataPath, 'VocOperantAllData.txt');
-delete(fullfile(OutputDataPath, 'StatsDiary.txt'));
+% delete(fullfile(OutputDataPath, 'StatsDiary.txt'));
 Today = datetime;
 diary(fullfile(OutputDataPath, sprintf('StatsDiary_%s_%d%d.txt', date,Today.Hour,Today.Minute)));
 
@@ -134,6 +134,7 @@ TotCleanExp = AllExpCount-ExpMissMicDataCount-ExpTooShortCount-ExpTooFewCallsCou
 fprintf(1, 'total number of clean experiments to process: %d\n', TotCleanExp)
 
 %% Stats of number fo experiments that went through vocalization detection
+TotCleanExp = 857;
 BaseDataDir = 'Z:\users\tobias\vocOperant';
 BaseCodeDir = 'C:\Users\tobias\Documents\GitHub\operant_bats';
 OutputDataPath = 'Z:\users\tobias\vocOperant\Exp_Stats';
