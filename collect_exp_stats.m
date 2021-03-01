@@ -216,6 +216,8 @@ CuratedExp.Low = nan(length(CuratedExp.Subject),1);
 CuratedExp.HighLow = cell(length(CuratedExp.Subject),1);
 CuratedExp.NumSeq = zeros(length(CuratedExp.Subject),1);
 CuratedExp.NumFullSeq = zeros(length(CuratedExp.Subject),1); % Sequences with vocalizations
+CuratedExp.UniqueSorterNames = {};
+CuratedExp.SorterSeqNum = [];
 
 for ee=1:length(CuratedExp.Subject)
     Ind = find(contains(ListAll{1}, [CuratedExp.Subject{ee} '_' CuratedExp.Date{ee} '_' CuratedExp.Time{ee}]));
@@ -224,8 +226,11 @@ for ee=1:length(CuratedExp.Subject)
     CuratedExp.Low(ee) = ListAll{4}(Ind);
     CuratedExp.HighLow{ee} = [num2str(ListAll{3}(Ind)) '-' num2str(ListAll{4}(Ind))];
     ManuFiles = dir(fullfile(BaseDataDir,ListAll{2}{Ind},'piezo', CuratedExp.Date{ee}, 'audiologgers', sprintf('%s_%s_VocExtractData_*', CuratedExp.Date{ee}, CuratedExp.Time{ee})));
+    if isempty(ManuFiles)
+        ManuFiles = dir(fullfile(BaseDataDir,ListAll{2}{Ind},'piezo', CuratedExp.Date{ee}, 'audiologgers', sprintf('%s_%s_VocExtractData*_*', CuratedExp.Date{ee}, CuratedExp.Time{ee})));
+    end
     for ff=1:length(ManuFiles)
-        load(fullfile(ManuFiles(ff).folder, ManuFiles(ff).name), 'IndVocStartRaw_merged')
+        load(fullfile(ManuFiles(ff).folder, ManuFiles(ff).name), 'IndVocStartRaw_merged', 'SorterName')
         CuratedExp.NumSeq(ee) = length(IndVocStartRaw_merged)+CuratedExp.NumSeq(ee);
         NumCall = nan(length(IndVocStartRaw_merged),1);
         for cc=1:length(IndVocStartRaw_merged)
@@ -238,6 +243,22 @@ for ee=1:length(CuratedExp.Subject)
         CuratedExp.NumFullSeq(ee) = sum(NumCall>0)+CuratedExp.NumFullSeq(ee);
         CuratedExp.NumVoc(ee) = sum(NumCall)+ CuratedExp.NumVoc(ee);
         clear IndVocStartRaw_merged
+        if exist('SorterName', 'var')
+            USorterName = unique([SorterName(~cellfun('isempty', SorterName)) CuratedExp.UniqueSorterNames]);
+            SorterNumSeq = zeros(length(USorterName),1);
+            for sn=1:length(USorterName)
+                if any(contains(CuratedExp.UniqueSorterNames, USorterName{sn})) % Sorter already listed
+                    SorterNumSeq(sn) = CuratedExp.SorterSeqNum(contains(CuratedExp.UniqueSorterNames, USorterName{sn})) + sum(contains(SorterName(~cellfun('isempty', SorterName)),USorterName{sn}));
+                elseif any(contains(SorterName(~cellfun('isempty', SorterName)),USorterName{sn})) % New sorter to list
+                    SorterNumSeq(sn) = sum(contains(SorterName(~cellfun('isempty', SorterName)),USorterName{sn}));
+                else
+                    SorterNumSeq(sn) = 0;
+                end
+            end
+            CuratedExp.SorterSeqNum = SorterNumSeq;
+            CuratedExp.UniqueSorterNames = USorterName;
+            clear SorterName
+        end
     end
 end
 fprintf(1, 'Total number of sequences with vocalizations %d/%d, %d%%\n', sum(CuratedExp.NumFullSeq),sum(CuratedExp.NumSeq),round(sum(CuratedExp.NumFullSeq)*100/sum(CuratedExp.NumSeq)))
@@ -286,6 +307,13 @@ ylabel('# Sequence Triggers')
 xlabel('Subjects ID')
 BAR(1).Parent.XTickLabel = SubjectsID;
 
+
+% Plot number of sequences per curator
+figure()
+BAR = bar(CuratedExp.SorterSeqNum);
+ylabel('# sequences')
+xlabel('Curator')
+BAR.Parent.XTickLabel = CuratedExp.UniqueSorterNames;
 
 
 
