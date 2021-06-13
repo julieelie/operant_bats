@@ -2,14 +2,25 @@ function result_operant_bat(Path2ParamFile, Path2RecordingTable, Logger_dir)
 addpath(genpath('/Users/elie/Documents/CODE/GitHub/LMC'))
 addpath(genpath('/Users/elie/Documents/CODE/GitHub/LoggerDataProcessing'))
 addpath(genpath('/Users/elie/Documents/CODE/GitHub/SoundAnalysisBats'))
+
+% Find the google drive folder
+GGFolder = '/Users/elie/Google Drive/My Drive/';
+if ~(exist(GGFolder, 'file')==7)
+    GGFolder = '/Users/elie/Google Drive/Mon Drive/';
+end
+if ~(exist(GGFolder, 'file')==7)
+    warning('cannot find GGFolder at %s\n', GGFolder)
+    GGFolder = input('Please enter the GGFolder path: ', 's');
+    keyboard
+end
 TranscExtract = 1; % set to 1 to extract logger data and transceiver time
 ForceExtract = 0; % set to 1 to redo the extraction of loggers otherwise the calculations will use the previous extraction data
-ForceAllign = 0; % In case the TTL pulses allignment was already done but you want to do it again, set to 1
+ForceAllign = 1; % In case the TTL pulses allignment was already done but you want to do it again, set to 1
 ForceVocExt3 = 0; % Used to patch the error in voc_localize_operant with call already detected issue
-ForceVocExt1 = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
+ForceVocExt1 = 1; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
 ForceVocExt2 = 0; % In case the extraction of vocalizations that triggered rewarding system was already done but you want to do it again set to 1
-ForceWhoID = 0; % In case the identification of bats was already done but you want to re-do it again
-ForceWhat = 1; % In case running biosound was already done but you want to re-do it
+ForceWhoID = 1; % In case the identification of bats was already done but you want to re-do it again
+ForceWhat = 0; % In case running biosound was already done but you want to re-do it
 PlotIndivFile = 0; % Set to 1 to plot the sound pressure waveforms of individual detected vocalizations
 close all
 % Get the recording data
@@ -21,7 +32,7 @@ WavFileStruc = dir(fullfile(AudioDataPath, [DataFile(1:16) '*mic*.wav']));
 DataSnipStruc = dir(fullfile(AudioDataPath, [DataFile(1:16) '*snippets/*.wav']));
 
 if TranscExtract && nargin<2
-    Path2RecordingTable = '/Users/elie/Google Drive/Mon Drive/BatmanData/RecordingLogs/recording_logs.xlsx';
+    Path2RecordingTable = fullfile(GGFolder,'/BatmanData/RecordingLogs/recording_logs.xlsx');
 end
 if TranscExtract && nargin<3
     % Set the path to logger data
@@ -492,6 +503,9 @@ if TranscExtract
     %% Identify the same vocalizations on the piezos and save sound extracts, onset and offset times
     fprintf(' LOCALIZING VOCALIZATIONS ON PIEZO RECORDINGS\n')
     LogVoc_dir = dir(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData.mat', Date, ExpStartTime)));
+    if isempty(LogVoc_dir)
+        LogVoc_dir = dir(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData1.mat', Date, ExpStartTime)));
+    end
     if isempty(LogVoc_dir) || ForceVocExt1 || ForceVocExt2 || ForceVocExt3
         get_logger_data_voc(AudioDataPath, Logger_dir,Date, ExpStartTime, 'SerialNumber',SerialNumberAL);
     else
@@ -503,12 +517,16 @@ if TranscExtract
     fprintf(' IDENTIFY WHO IS CALLING\n')
     WhoCall_dir = dir(fullfile(Logger_dir, sprintf('*%s_%s*whocalls*', Date, ExpStartTime)));
     if isempty(WhoCall_dir) || ForceVocExt1 || ForceWhoID || ForceVocExt2
-        who_calls(AudioDataPath, Logger_dir,Date, ExpStartTime,200,1);
+        who_calls_playless(AudioDataPath, Logger_dir,Date, ExpStartTime,200,1);
     else
         fprintf(1,'Using already processed data\n')
     end
     % Save the ID of the bat for each logger
-    save(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData_%d.mat', Date, ExpStartTime, 200)), 'BatID','LoggerName','-append')
+    try
+        save(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData_%d.mat', Date, ExpStartTime, 200)), 'BatID','LoggerName','-append')
+    catch
+        save(fullfile(Logger_dir, sprintf('%s_%s_VocExtractData1_%d.mat', Date, ExpStartTime, 200)), 'BatID','LoggerName','-append')
+    end
 
      %% Explore what is said
     fprintf('\n*** Identify what is said ***\n')
@@ -518,6 +536,12 @@ if TranscExtract
     else
         fprintf('\n*** ALREADY DONE: Identify what is said ***\n')
     end
+    
+    %% Check the audio quality of what was saved under what calls by simply calculating a correlation between microphone and logger
+    fprintf('\n*** Identify Audio quality ***\n')
+    audioQuality_calls(Logger_dir,Date, ExpStartTime);
+    fprintf('\n*** DONE: Identify Audio quality ***\n')
+    
     
 elseif isempty(VocExt_dir) || ForceVocExt1
     fprintf(1,'*** Localizing and extracting vocalizations that triggered the sound detection ***\n');
