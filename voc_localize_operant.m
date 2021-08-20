@@ -202,6 +202,10 @@ for ss=1:NVoc
             fprintf(1, 'Calculating average RMS values on a %.1f min sample of silence\n',Dur_RMS);
             SampleDur = round(Dur_RMS*60*FS);
             StartSamp = round(length(Y)/2);
+            while length(Y)<StartSamp+round(SampleDur)
+                StartSamp = StartSamp/2;
+                SampleDur = SampleDur/4;
+            end
             fprintf(1,'Calculating the amplitude threshold for file %d  ',File_Idx(ss))
             BadSection = 1;
             while BadSection
@@ -209,6 +213,11 @@ for ss=1:NVoc
                 Amp_env_Mic = running_rms(Filt_RawVoc, FS, Fhigh_power, Fs_env);
                 if any(Amp_env_Mic>MicThreshNoise) % there is most likely a vocalization in this sequence look somewhere else!
                     StartSamp = StartSamp + SampleDur +1;
+                    if (StartSamp + round(SampleDur)) > length(Y)
+                        StartSamp = StartSamp - SampleDur;
+                        SampleDur = SampleDur/4;
+                        StartSamp = StartSamp + SampleDur +1;
+                    end
                 else
                     BadSection = 0;
                 end
